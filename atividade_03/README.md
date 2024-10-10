@@ -1,3 +1,5 @@
+# Atividade: Extração de Links
+
 Faça o download de alguma página da Internet, do portal da UTFPR por exemplo, e realize a extração do conteúdo de uma tag HTML informada pelo usuário.
 
 Podem usar os comandos wget^[https://www.hostinger.com/tutorials/wget-command-examples/] ou curl^[https://flaviocopes.com/http-curl/] para recuperar o código HTML.
