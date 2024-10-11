@@ -1,0 +1,30 @@
+{
+  "name": "tpp",
+  "displayName": "Tpp Syntax",
+  "description": "Syntax highlighting for the Tpp language",
+  "publisher": "Eduardo Kurek",
+  "icon": "icon.png",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.0.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "scripts": {
+    "pack": "vsce package"
+  },
+  "contributes": {
+    "languages": [{
+      "id": "tpp",
+      "aliases": ["tpp", "tpp"],
+      "extensions": [".tpp"],
+      "configuration": "./language-configuration.json"
+    }],
+    "grammars": [{
+      "language": "tpp",
+      "scopeName": "source.tpp",
+      "path": "./syntaxes/tpp.tmLanguage.json"
+    }]
+  }
+}

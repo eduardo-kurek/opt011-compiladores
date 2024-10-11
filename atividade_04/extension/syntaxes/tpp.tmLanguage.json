@@ -1,0 +1,88 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "tpp",
+	"patterns": [
+		{
+			"include": "#comments"
+		},
+		{
+			"include": "#primitives"
+		},
+		{
+			"include": "#ctrl-keywords"
+		},
+		{
+			"include": "#functions"
+		},
+		{
+			"include": "#variables"
+		},
+		{
+			"include": "#operators"
+		}
+	],
+	"repository": {
+		"comments": {
+			"name": "comment.block.tpp",
+			"begin": "\\{",
+			"end": "\\}",
+			"patterns": [
+				{
+					"name": "comment.content.tpp",
+					"match": "[^{}]+"
+				}
+			]
+		},
+		"primitives": {
+			"patterns": [
+				{
+					"name": "keyword.type.tpp",
+					"match": "\\b(inteiro|flutuante):{0,1}\\b"
+				}
+			]
+		},
+		"ctrl-keywords": {
+			"patterns": [{
+				"name": "keyword.control.tpp",
+				"match": "\\b(se|então|fim|repita|até|senão|retorna\\()\\b"
+			}]
+		},
+		"functions": {
+			"patterns": [
+				{
+					"name": "entity.name.function.tpp",
+					"match": "[_a-zA-Z][_a-zA-Z0-9]*\\s*\\("
+				}
+			]
+		},
+		"variables": {
+			"patterns": [
+				{
+					"name": "variable.name.tpp",
+					"match": "[_a-zA-Z][_a-zA-Z0-9]*"
+				}
+			]
+		},
+		"operators": {
+			"patterns": [
+				{
+					"name": "keyword.operator.assignment.tpp",
+					"match": ":="
+				},
+				{
+					"name": "keyword.operator.tpp",
+					"match": "[+-/*]"
+				},
+				{
+					"name": "keyword.operator.logical.tpp",
+					"match": "&&|\\|\\||!"
+				},
+				{
+					"name": "keyword.operator.comparison.tpp",
+					"match": "<|>|=|<>|<=|>="
+				}
+			]
+		}
+	},
+	"scopeName": "source.tpp"
+}
