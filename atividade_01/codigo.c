@@ -17,10 +17,6 @@ void sort(int n){
             }
         }
     }
-    for(int i = 0; i < n; i++){
-        printf("%d ", vetor[i]);
-    }
-    printf("\n");
 }
 
 void print_vector(int n){
@@ -31,5 +27,6 @@ void print_vector(int n){
 
 int main() {
     sort(10);
+    print_vector(10);
     return 0;
 }
