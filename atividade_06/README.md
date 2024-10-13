@@ -1,0 +1,2 @@
+# Atividade: Extensão da Calculadora em PLY
+* Na documentação do PLY tem uma seção que descreve a implementação de um Analisador Léxico para uma calculadora básica. Altere o arquivo calclex.py do Lex Example para que seja possível utilizar além das operações aritméticas, as operações lógicas:
