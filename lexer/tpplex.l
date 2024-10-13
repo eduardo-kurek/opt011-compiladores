@@ -79,7 +79,7 @@ flutuante { yyprint("FLUTUANTE"); }
 [0-9]+ { yyprint("NUM_INTEIRO"); }
 [-]?[0-9]+(\.([0-9]+)?) { yyprint("NUM_PONTO_FLUTUANTE"); }
 (([-\+]?)([1-9])\.([0-9])+[eE]([-\+]?)([0-9]+)) { yyprint("NUM_NOTACAO_CIENTIFICA"); }
-[a-zA-Z][a-zA-Z0-9_]* { yyprint("ID"); }
+{ID} { yyprint("ID"); }
 
 [ \t] { /* IGNORA ESPAÇOS EM BRANCO */ }
 \n+ { yylineno++; }
