@@ -7,4 +7,4 @@ lex.yy.c: tpplex.l
 	flex tpplex.l
 
 clean:
-	rm -f lex.yy.c tpplex
+	rm -f lex.yy.c tpplex tpplex.exe
