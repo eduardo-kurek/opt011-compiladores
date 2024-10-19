@@ -1,4 +1,6 @@
 %{
+#include <iostream>
+#include <fstream>
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
@@ -7,29 +9,16 @@
     #include <windows.h>
 #endif
 
-typedef struct error{
-    char code[30];
-    char message[50];
-} Error;
+#include "Error.h"
 
-enum LexerErrors {
-    ERR_LEX_USE = 0,
-    ERR_LEX_NOT_TPP = 1,
-    ERR_LEX_FILE_NOT_EXISTS = 2,
-    ERR_LEX_INV_CHAR = 3
-};
-
-const Error lexerErrors[] = {
-    {"ERR-LEX-USE", "Uso: ./lexer file.tpp"},
-    {"ERR-LEX-NOT-TPP", "Não é um arquivo .tpp"},
-    {"ERR-LEX-FILE-NOT-EXISTS", "Arquivo .tpp não existe"},
-    {"ERR-LEX-INV-CHAR", "Caractere inválido"}
-};
+FlexLexer* lex = nullptr;
 
 bool check_key = false;
-
-void yyerror(const Error* errorList, int errorCode, bool kill);
-void yyprint(char* s);
+void yyerror(const Error::Error* err, bool kill);
+void yyprint(const char* s);
+void adjustConsole();
+int handleArguments(int argc, char* argv[]);
+void redirectStdin(const char* fileName);
 
 %}
 
@@ -38,7 +27,8 @@ LETRA [a-zA-ZáÁãÃàÀéÉíÍóÓõÕç]
 ID [a-zA-ZáÁãÃàÀéÉíÍóÓõÕ][a-zA-ZáÁãÃàÀéÉíÍóÓõÕ0-9_]*
 
 %option case-sensitive
-
+%option c++
+%option noyywrap
 %%
 
 
@@ -82,26 +72,39 @@ flutuante { yyprint("FLUTUANTE"); }
 {ID} { yyprint("ID"); }
 
 [ \t] { /* IGNORA ESPAÇOS EM BRANCO */ }
-\r\n|\n { yylineno++; }
-.|ç { yyerror(lexerErrors, ERR_LEX_INV_CHAR, false); }
+\r\n|\n { }
+.|ç { yyerror(Error::ERR_LEX_INV_CHAR, false); }
 
 %%
 
-void yyprint(char* s) {
+void yyprint(const char* s) {
     if(check_key)
         printf("%s\n", s);
     else
-        printf("LexToken(%s,'%s',%d,%d)\n", s, yytext, yylineno, yyleng);
+        printf("LexToken(%s,'%s',%d,%d)\n", s, lex->YYText(), lex->lineno(), lex->YYLeng());
 }
 
-void yyerror(const Error* errorList, int errorCode, bool kill) {
+void yyerror(const Error::Error* err, bool kill) {
     if(check_key)
-        printf("%s\n", errorList[errorCode].code);
+        err->printCode();
     else
-        printf("%s\n", errorList[errorCode].message);
+        err->printMessage();
 
     if(kill) exit(1);
 }
+
+int main(int argc, char* argv[]) {
+    adjustConsole();
+    int fileIdx = handleArguments(argc, argv);
+    redirectStdin(argv[fileIdx]);
+
+    lex = new yyFlexLexer();
+    
+    while(lex->yylex() != 0);
+    
+    return 0;
+}
+
 
 bool stringHasPoint(const char* str){
     if(strstr(str, ".") == NULL) return false;
@@ -145,8 +148,8 @@ int handleArguments(int argc, char* argv[]) {
         }
     }
 
-    if(fileIdx == -1) yyerror(lexerErrors, ERR_LEX_USE, true);
-    if(!hasTppExtension(argv[fileIdx])) yyerror(lexerErrors, ERR_LEX_NOT_TPP, true);
+    if(fileIdx == -1) yyerror(Error::ERR_LEX_USE, true);
+    if(!hasTppExtension(argv[fileIdx])) yyerror(Error::ERR_LEX_NOT_TPP, true);
     
     return fileIdx;
 }
@@ -157,22 +160,8 @@ void adjustConsole() {
     #endif
 }
 
-void openFile(const char* fileName) {
-    FILE* file = fopen(fileName, "r");
-    if(file == NULL) yyerror(lexerErrors, ERR_LEX_FILE_NOT_EXISTS, true);
-    yyin = file;
-}
-
-int main(int argc, char* argv[]) {
-    adjustConsole();
-    int fileIdx = handleArguments(argc, argv);
-    openFile(argv[fileIdx]);
-    
-    yylex();
-    
-    if (yyin) {
-        fclose(yyin);
-    }
-    
-    return 0;
+void redirectStdin(const char* fileName) {
+    std::ifstream file(fileName);
+    if(!file.good()) yyerror(Error::ERR_LEX_FILE_NOT_EXISTS, true); 
+    freopen(fileName, "r", stdin);
 }

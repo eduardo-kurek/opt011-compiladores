@@ -1,10 +1,10 @@
-CC=gcc
+CC=g++
 
-all: lex.yy.c
-	${CC} lex.yy.c -o tpplex -lfl
+all: src/lex.yy.cc
+	${CC} src/lex.yy.cc -o tpplex -lfl src/Error.cpp
 
-lex.yy.c: tpplex.l
-	flex tpplex.l
+src/lex.yy.cc: src/tpplex.l
+	flex -o src/lex.yy.cc src/tpplex.l
 
 clean:
-	rm -f lex.yy.c tpplex tpplex.exe
+	rm -f src/lex.yy.cc tpplex tpplex.exe
