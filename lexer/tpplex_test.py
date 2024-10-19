@@ -17,8 +17,6 @@ def execute_test(input_file, args):
     process = subprocess.Popen(shlex.split(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     stdout, stderr = process.communicate()
-    print("pre - convert")
-    print(stdout)
     stdout = stdout.decode('utf-8')
     stdout = stdout.replace('\r', '')
 
