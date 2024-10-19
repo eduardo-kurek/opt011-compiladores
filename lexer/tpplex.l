@@ -82,7 +82,7 @@ flutuante { yyprint("FLUTUANTE"); }
 {ID} { yyprint("ID"); }
 
 [ \t] { /* IGNORA ESPAÇOS EM BRANCO */ }
-\n+ { yylineno++; }
+\r\n|\n { yylineno++; }
 .|ç { yyerror(lexerErrors, ERR_LEX_INV_CHAR, false); }
 
 %%

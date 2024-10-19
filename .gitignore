@@ -1,0 +1,3 @@
+lexer/lex.yy.c
+lexer/tpplex
+lexer/__pycache__/

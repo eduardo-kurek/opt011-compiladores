@@ -1,7 +1,7 @@
 {A função preenche o vetor com valores}
 preeenche_vetor(inteiro: vetor[], inteiro: tamanho) 
   inteiro: indice := 0
-  
+
   repita
     se indice > 2 então
       vetor[indice] := -indice
