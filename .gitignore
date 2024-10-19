@@ -1,5 +1,7 @@
 lexer/lex.yy.c
 lexer/tpplex
+lexer/tpplex.exe
+lexer/src/lex.yy.cc
 lexer/__pycache__/
 lexer/.pytest_cache
 .vscode

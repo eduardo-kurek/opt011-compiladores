@@ -1,6 +1,6 @@
-#line 2 "src/lex.yy.cc"
+#line 1 "src/lex.yy.cc"
 
-#line 4 "src/lex.yy.cc"
+#line 3 "src/lex.yy.cc"
 
 #define  YY_INT_ALIGNED short int
 
@@ -498,8 +498,8 @@ void adjustConsole();
 int handleArguments(int argc, char* argv[]);
 void redirectStdin(const char* fileName);
 
+#line 501 "src/lex.yy.cc"
 #line 502 "src/lex.yy.cc"
-#line 503 "src/lex.yy.cc"
 
 #define INITIAL 0
 
@@ -635,7 +635,7 @@ YY_DECL
 
 
 
-#line 639 "src/lex.yy.cc"
+#line 638 "src/lex.yy.cc"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -894,7 +894,7 @@ YY_RULE_SETUP
 #line 78 "src/tpplex.l"
 ECHO;
 	YY_BREAK
-#line 898 "src/lex.yy.cc"
+#line 897 "src/lex.yy.cc"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
