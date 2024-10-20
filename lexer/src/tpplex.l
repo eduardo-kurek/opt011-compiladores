@@ -14,7 +14,8 @@
 FlexLexer* lex = nullptr;
 
 bool check_key = false;
-void yyerror(const Error::Error* err, bool kill);
+void yyerror(const Error::Error* err);
+void yyfatal_error(const Error::Error* err);
 void yyprint(const char* s);
 void adjustConsole();
 int handleArguments(int argc, char* argv[]);
@@ -31,49 +32,47 @@ ID [a-zA-ZáÁãÃàÀéÉíÍóÓõÕ][a-zA-ZáÁãÃàÀéÉíÍóÓõÕ0-9_]*
 %option noyywrap
 %%
 
+\{([^{}]|\n)*\} /* IGNORA COMENTÁRIOS */ ;
 
-\{([^{}]|\n)*\} { /* IGNORA COMENTÁRIOS */ }
+\+ yyprint("MAIS");
+- yyprint("MENOS");
+\* yyprint("VEZES");
+\/ yyprint("DIVIDE");
+\: yyprint("DOIS_PONTOS");
+, yyprint("VIRGULA");
+\< yyprint("MENOR");
+> yyprint("MAIOR");
+= yyprint("IGUAL");
+\<> yyprint("DIFERENTE");
+\<= yyprint("MENOR_IGUAL");
+>= yyprint("MAIOR_IGUAL");
+&& yyprint("E");
+"||" yyprint("OU");
+! yyprint("NAO");
+\( yyprint("ABRE_PARENTESE");
+\) yyprint("FECHA_PARENTESE");
+\[ yyprint("ABRE_COLCHETE");
+\] yyprint("FECHA_COLCHETE");
+se yyprint("SE");
+então yyprint("ENTAO");
+senão yyprint("SENAO");
+fim yyprint("FIM");
+repita yyprint("REPITA");
+até yyprint("ATE");
+:= yyprint("ATRIBUICAO");
+leia yyprint("LEIA");
+escreva yyprint("ESCREVA");
+retorna yyprint("RETORNA");
+inteiro yyprint("INTEIRO");
+flutuante yyprint("FLUTUANTE");
+[0-9]+ yyprint("NUM_INTEIRO");
+[-]?[0-9]+(\.([0-9]+)?) yyprint("NUM_PONTO_FLUTUANTE");
+(([-\+]?)([1-9])\.([0-9])+[eE]([-\+]?)([0-9]+)) yyprint("NUM_NOTACAO_CIENTIFICA");
+{ID} yyprint("ID");
 
-
-\+ { yyprint("MAIS"); }
-- { yyprint("MENOS"); }
-\* { yyprint("VEZES"); }
-\/ { yyprint("DIVIDE"); }
-\: { yyprint("DOIS_PONTOS"); }
-, { yyprint("VIRGULA"); }
-\< { yyprint("MENOR"); }
-> { yyprint("MAIOR"); }
-= { yyprint("IGUAL"); }
-\<> { yyprint("DIFERENTE"); }
-\<= { yyprint("MENOR_IGUAL"); }
->= { yyprint("MAIOR_IGUAL"); }
-&& { yyprint("E"); }
-"||" { yyprint("OU"); }
-! { yyprint("NAO"); }
-\( { yyprint("ABRE_PARENTESE"); }
-\) { yyprint("FECHA_PARENTESE"); }
-\[ { yyprint("ABRE_COLCHETE"); }
-\] { yyprint("FECHA_COLCHETE"); }
-se { yyprint("SE"); }
-então { yyprint("ENTAO"); }
-senão { yyprint("SENAO"); }
-fim { yyprint("FIM"); }
-repita { yyprint("REPITA"); }
-até { yyprint("ATE"); }
-:= { yyprint("ATRIBUICAO"); }
-leia { yyprint("LEIA"); }
-escreva { yyprint("ESCREVA"); }
-retorna { yyprint("RETORNA"); }
-inteiro { yyprint("INTEIRO"); }
-flutuante { yyprint("FLUTUANTE"); }
-[0-9]+ { yyprint("NUM_INTEIRO"); }
-[-]?[0-9]+(\.([0-9]+)?) { yyprint("NUM_PONTO_FLUTUANTE"); }
-(([-\+]?)([1-9])\.([0-9])+[eE]([-\+]?)([0-9]+)) { yyprint("NUM_NOTACAO_CIENTIFICA"); }
-{ID} { yyprint("ID"); }
-
-[ \t] { /* IGNORA ESPAÇOS EM BRANCO */ }
-\r\n|\n { }
-.|ç { yyerror(Error::ERR_LEX_INV_CHAR, false); }
+[ \t] /* IGNORA ESPAÇOS EM BRANCO */ ;
+\r\n|\n  /* IGNORA QUEBRAS DE LINHA */ ;
+.|ç yyerror(Error::ERR_LEX_INV_CHAR);
 
 %%
 
@@ -84,13 +83,15 @@ void yyprint(const char* s) {
         printf("LexToken(%s,'%s',%d,%d)\n", s, lex->YYText(), lex->lineno(), lex->YYLeng());
 }
 
-void yyerror(const Error::Error* err, bool kill) {
-    if(check_key)
-        err->printCode();
-    else
-        err->printMessage();
+void yyerror(const Error::Error* err){
+    if(check_key) err->printCode();
+    else err->printMessage();
+}
 
-    if(kill) exit(1);
+void yyfatal_error(const Error::Error* err) {
+    if(check_key) err->printCode();
+    else err->printMessage();
+    exit(1);
 }
 
 int main(int argc, char* argv[]) {
@@ -148,8 +149,8 @@ int handleArguments(int argc, char* argv[]) {
         }
     }
 
-    if(fileIdx == -1) yyerror(Error::ERR_LEX_USE, true);
-    if(!hasTppExtension(argv[fileIdx])) yyerror(Error::ERR_LEX_NOT_TPP, true);
+    if(fileIdx == -1) yyfatal_error(Error::ERR_LEX_USE);
+    if(!hasTppExtension(argv[fileIdx])) yyfatal_error(Error::ERR_LEX_NOT_TPP);
     
     return fileIdx;
 }
@@ -162,6 +163,6 @@ void adjustConsole() {
 
 void redirectStdin(const char* fileName) {
     std::ifstream file(fileName);
-    if(!file.good()) yyerror(Error::ERR_LEX_FILE_NOT_EXISTS, true); 
+    if(!file.good()) yyfatal_error(Error::ERR_LEX_FILE_NOT_EXISTS); 
     freopen(fileName, "r", stdin);
 }
