@@ -28,8 +28,9 @@ LETRA [a-zA-ZáÁãÃàÀéÉíÍóÓõÕç]
 ID [a-zA-ZáÁãÃàÀéÉíÍóÓõÕ][a-zA-ZáÁãÃàÀéÉíÍóÓõÕ0-9_]*
 
 %option case-sensitive
-%option c++
 %option noyywrap
+%option yylineno
+%option c++
 %%
 
 \{([^{}]|\n)*\} /* IGNORA COMENTÁRIOS */ ;
