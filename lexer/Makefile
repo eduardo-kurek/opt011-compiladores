@@ -7,4 +7,4 @@ src/lex.yy.cc: src/tpplex.l
 	flex -o src/lex.yy.cc src/tpplex.l
 
 clean:
-	rm -f src/lex.yy.cc tpplex tpplex.exe
+	rm -rf src/lex.yy.cc tpplex tpplex.exe __pycache__/ .pytest_cache
