@@ -74,7 +74,7 @@ flutuante yyprint("FLUTUANTE");
 
 [ \t] /* IGNORA ESPAÇOS EM BRANCO */ column++;
 \r\n|\n  /* IGNORA QUEBRAS DE LINHA */ column = 1;
-.|ç yyerror(Error::ERR_LEX_INV_CHAR);
+.|ç yyerror(Error::ERR_LEX_INV_CHAR); column++;
 
 %%
 
@@ -87,6 +87,7 @@ void yyprint(const char* s) {
 }
 
 void yyerror(const Error::Error* err){
+    printf("[%d, %d]: ", lex->lineno(), column);
     if(check_key) err->printCode();
     else err->printMessage();
 }
