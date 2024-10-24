@@ -13,6 +13,7 @@
 
 FlexLexer* lex = nullptr;
 
+int column = 1;
 bool check_key = false;
 void yyerror(const Error::Error* err);
 void yyfatal_error(const Error::Error* err);
@@ -71,8 +72,8 @@ flutuante yyprint("FLUTUANTE");
 (([-\+]?)([1-9])\.([0-9])+[eE]([-\+]?)([0-9]+)) yyprint("NUM_NOTACAO_CIENTIFICA");
 {ID} yyprint("ID");
 
-[ \t] /* IGNORA ESPAÇOS EM BRANCO */ ;
-\r\n|\n  /* IGNORA QUEBRAS DE LINHA */ ;
+[ \t] /* IGNORA ESPAÇOS EM BRANCO */ column++;
+\r\n|\n  /* IGNORA QUEBRAS DE LINHA */ column = 1;
 .|ç yyerror(Error::ERR_LEX_INV_CHAR);
 
 %%
@@ -81,7 +82,8 @@ void yyprint(const char* s) {
     if(check_key)
         printf("%s\n", s);
     else
-        printf("LexToken(%s,'%s',%d,%d)\n", s, lex->YYText(), lex->lineno(), lex->YYLeng());
+        printf("LexToken(%s,'%s',%d,%d)\n", s, lex->YYText(), lex->lineno(), column);
+    column += lex->YYLeng();
 }
 
 void yyerror(const Error::Error* err){
@@ -101,9 +103,8 @@ int main(int argc, char* argv[]) {
     redirectStdin(argv[fileIdx]);
 
     lex = new yyFlexLexer();
-    
-    while(lex->yylex() != 0);
-    
+    lex->yylex();
+
     return 0;
 }
 
