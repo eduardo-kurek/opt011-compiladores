@@ -4,4 +4,8 @@ lexer/tpplex.exe
 lexer/src/lex.yy.cc
 lexer/__pycache__/
 lexer/.pytest_cache
+parser/src/lex.yy.c
+parser/src/parser.tab.c
+parser/src/parser.tab.h
+parser/parser
 .vscode
