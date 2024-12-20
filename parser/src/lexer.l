@@ -13,6 +13,8 @@ NUM_PONTO_FLUTUANTE [-]?[0-9]+(\.([0-9]+)?)
 NUM_NOTACAO_CIENTIFICA [-]?[0-9]+(\.([0-9]+)?)
 ID [a-zA-ZáÁãÃàÀéÉíÍóÓõÕ][a-zA-ZáÁãÃàÀéÉíÍóÓõÕ0-9_]*
 
+%option yylineno
+
 %%
 
 \{([^{}]|\n)*\} /* IGNORA COMENTÁRIOS */ ;

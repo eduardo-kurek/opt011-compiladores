@@ -10,6 +10,8 @@ bool check_key = false;
 
 extern Node* syntax_tree;
 extern FILE* yyin;
+extern void my_yyerror(const Error* err);
+extern bool success;
 
 void yyfatal_error(const Error* err);
 bool stringHasPoint(const char* str);
@@ -28,7 +30,16 @@ int main(int argc, char* argv[]) {
         yyparse();
     } while(!feof(yyin));
 
-    node_to_dot(syntax_tree, "tree.dot");
+    // Só gera a árvore se não teve erros fatais
+    if(success){
+        my_yyerror(&WAR_SYN_GEN_SYNTAX_TREE);
+        node_to_dot(syntax_tree, "tree.dot");
+        my_yyerror(&WAR_SYN_OUTPUT_FILE);
+
+        my_yyerror(&WAR_SYN_ANA_SUCCESS);
+        
+        return 1;
+    }
 
     return 0;
 }

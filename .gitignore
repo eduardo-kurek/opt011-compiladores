@@ -8,4 +8,8 @@ parser/src/lex.yy.c
 parser/src/parser.tab.c
 parser/src/parser.tab.h
 parser/parser
+parser/.pytest_cache
+parser/__pycache__
+parser/tree.dot
+parser/tree.png
 .vscode

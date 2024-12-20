@@ -1,14 +1,19 @@
 %{
 #include <stdio.h>
 #include "tree.h"
+#include <stdbool.h>
+#include "errors.h"
 
 int yylex();
 int yyerror(char* s);
-void adjustConsole();
-int handleArguments(int argc, char* argv[]);
-void redirectStdin(const char* fileName);
+void my_yyerror(const Error* err);
 
+extern bool check_key;
+
+bool success = true; // Avisa se a arvore foi gerada com sucesso
 Node* syntax_tree = NULL;
+
+extern int yylineno;
 %}
 
 %token<value> NUM_INTEIRO NUM_PONTO_FLUTUANTE NUM_NOTACAO_CIENTIFICA ID
@@ -110,11 +115,29 @@ indice:
             $3, node_create_leaf("FECHA_COLCHETE", "]")
         );
     }
+    | indice ABRE_COLCHETE FECHA_COLCHETE {
+        my_yyerror(&ERR_SYN_INDICE);
+        $$ = node_create("indice");
+        Node* err = node_create("error");
+        node_add_children($$, 4, 
+            $1, node_create_leaf("ABRE_COLCHETE", "["),
+            err, node_create_leaf("FECHA_COLCHETE", "]")
+        );
+    }
     | ABRE_COLCHETE expressao FECHA_COLCHETE {
         $$ = node_create("indice");
         node_add_children($$, 
             3, node_create_leaf("ABRE_COLCHETE", "["), 
             $2, node_create_leaf("FECHA_COLCHETE", "]")
+        );
+    }
+    | ABRE_COLCHETE FECHA_COLCHETE {
+        my_yyerror(&ERR_SYN_INDICE);
+        Node* err = node_create("error");
+        $$ = node_create("indice");
+            node_add_children($$, 
+            3, node_create_leaf("ABRE_COLCHETE", "["), 
+            err, node_create_leaf("FECHA_COLCHETE", "]")
         );
     }
 ;
@@ -470,6 +493,20 @@ vazio:
 %%
 
 int yyerror(char* s){
-    printf("Syntax error on line %s\n", s);
-    return 0;
+    success = false;
+    my_yyerror(&ERR_SYN_IRRECUPERAVEL);
+    my_yyerror(&WAR_SYN_NOT_GEN_SYNTAX_TREE);
+}
+
+void my_yyerror(const Error* err){
+    if(check_key)
+        printf("%s\n", err->cod);
+    else{
+        if(err->type == 'E')
+            printf("\033[1;31mLinha %d: %s\033[0m\n", yylineno, err->msg); // Vermelho
+        else if(err->type == 'W')
+            printf("\033[1;33m%s\033[0m\n", err->msg); // Amarelo
+        else
+            printf("Linha %d: %s\n", yylineno, err->msg);
+    }
 }

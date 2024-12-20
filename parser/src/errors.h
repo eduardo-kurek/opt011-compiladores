@@ -4,6 +4,7 @@
 typedef struct error{
     const char* cod;
     const char* msg;
+    const char type;
 } Error;
 
 // Lexer errors
