@@ -23,6 +23,8 @@ extern Error ERR_SYN_IRRECUPERAVEL;
 extern Error WAR_SYN_ANA_SUCCESS;
 extern Error ERR_SYN_LISTA_ARGUMENTOS;
 extern Error ERR_SYN_INDICE;
+extern Error ERR_SYN_PARAMETRO;
+extern Error ERR_SYN_LEIA;
 extern Error ERR_SYN_EOF_INESPERADO;
 extern Error WAR_SYN_OUTPUT_FILE;
 

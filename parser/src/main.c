@@ -29,17 +29,20 @@ int main(int argc, char* argv[]) {
     do {
         yyparse();
     } while(!feof(yyin));
+    
 
-    // Só gera a árvore se não teve erros fatais
-    if(success){
-        my_yyerror(&WAR_SYN_GEN_SYNTAX_TREE);
-        node_to_dot(syntax_tree, "tree.dot");
-        my_yyerror(&WAR_SYN_OUTPUT_FILE);
-
-        my_yyerror(&WAR_SYN_ANA_SUCCESS);
-        
+    if(syntax_tree == NULL || node_get_child_count(syntax_tree) == 0){
+        my_yyerror(&ERR_SYN_IRRECUPERAVEL);
+        my_yyerror(&WAR_SYN_NOT_GEN_SYNTAX_TREE);
         return 1;
     }
+
+    my_yyerror(&WAR_SYN_GEN_SYNTAX_TREE);
+    my_yyerror(&WAR_SYN_ANA_SUCCESS);
+    node_to_dot(syntax_tree, "tree.dot");
+    my_yyerror(&WAR_SYN_OUTPUT_FILE);
+    
+
 
     return 0;
 }

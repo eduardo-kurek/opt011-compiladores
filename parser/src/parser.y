@@ -9,6 +9,7 @@ int yyerror(char* s);
 void my_yyerror(const Error* err);
 
 extern bool check_key;
+extern char* yytext;
 
 bool success = true; // Avisa se a arvore foi gerada com sucesso
 Node* syntax_tree = NULL;
@@ -34,6 +35,7 @@ extern int yylineno;
 }
 
 %start programa
+%define parse.error custom
 
 %%
 
@@ -69,6 +71,7 @@ declaracao:
         $$ = node_create("declaracao");
         node_add_child($$, $1);
     }
+    | REPITA { printf("Faça nada"); }
 ;
 
 declaracao_variaveis:
@@ -118,7 +121,7 @@ indice:
     | indice ABRE_COLCHETE FECHA_COLCHETE {
         my_yyerror(&ERR_SYN_INDICE);
         $$ = node_create("indice");
-        Node* err = node_create("error");
+        Node* err = node_create("ERR-SYN-INDICE");
         node_add_children($$, 4, 
             $1, node_create_leaf("ABRE_COLCHETE", "["),
             err, node_create_leaf("FECHA_COLCHETE", "]")
@@ -131,9 +134,9 @@ indice:
             $2, node_create_leaf("FECHA_COLCHETE", "]")
         );
     }
-    | ABRE_COLCHETE FECHA_COLCHETE {
+    | ABRE_COLCHETE error FECHA_COLCHETE {
         my_yyerror(&ERR_SYN_INDICE);
-        Node* err = node_create("error");
+        Node* err = node_create("ERR-SYN-INDICE");
         $$ = node_create("indice");
             node_add_children($$, 
             3, node_create_leaf("ABRE_COLCHETE", "["), 
@@ -210,6 +213,50 @@ parametro:
             node_create_leaf("FECHA_COLCHETE", "]")
         );
     }
+    | error DOIS_PONTOS ID {
+        my_yyerror(&ERR_SYN_PARAMETRO);
+        Node* err = node_create("ERR_SYN_PARAMETRO");
+        $$ = node_create("parametro");
+        node_add_children($$, 3,
+            err,
+            node_create_leaf("DOIS_PONTOS", ":"),
+            node_create_leaf("ID", $3)
+        );
+        yyerrok; yyclearin;
+    }
+    | tipo DOIS_PONTOS error {
+        my_yyerror(&ERR_SYN_PARAMETRO);
+        Node* err = node_create("ERR_SYN_PARAMETRO");
+        $$ = node_create("parametro");
+        node_add_children($$, 3,
+            $1,
+            node_create_leaf("DOIS_PONTOS", ":"),
+            err
+        );
+        yyerrok; yyclearin;
+    }
+    | parametro error FECHA_COLCHETE {
+        my_yyerror(&ERR_SYN_PARAMETRO);
+        Node* err = node_create("ERR_SYN_PARAMETRO");
+        $$ = node_create("parametro");
+        node_add_children($$, 3,
+            $1,
+            err,
+            node_create_leaf("FECHA_COLCHETE", "]")
+        );
+        yyerrok; yyclearin;
+    }
+    | parametro ABRE_COLCHETE error {
+        my_yyerror(&ERR_SYN_PARAMETRO);
+        Node* err = node_create("ERR_SYN_PARAMETRO");
+        $$ = node_create("parametro");
+        node_add_children($$, 3,
+            $1,
+            node_create_leaf("ABRE_COLCHETE", "["),
+            err
+        );
+        yyerrok; yyclearin;
+    }
 ;
 
 corpo:
@@ -272,6 +319,12 @@ se:
             node_create_leaf("FIM", "fim")
         );
     }
+    | error expressao ENTAO corpo FIM { printf("Erro 1"); }
+    | SE expressao error corpo FIM { printf("Erro 2"); }
+    | error expressao ENTAO corpo SENAO corpo FIM { printf("Erro 3"); }
+    | SE expressao error corpo SENAO corpo FIM { printf("Erro 4"); }
+    | SE expressao ENTAO corpo error corpo FIM { printf("Erro 5"); }
+    | SE expressao ENTAO corpo SENAO corpo { printf("Erro 6"); }
 ;
 
 repita:
@@ -282,6 +335,8 @@ repita:
             node_create_leaf("ATE", "ate"), $4
         );
     }
+    | error corpo ATE expressao {}
+    | REPITA corpo error expressao {}
 ;
 
 atribuicao:
@@ -299,6 +354,17 @@ leia:
             node_create_leaf("ABRE_PARENTESE", "("), $3,
             node_create_leaf("FECHA_PARENTESE", ")")
         );
+    }
+    | LEIA ABRE_PARENTESE error FECHA_PARENTESE {
+        my_yyerror(&ERR_SYN_LEIA);
+        Node* err = node_create("ERR_SYN_LEIA");
+        $$ = node_create("leia");
+        node_add_children($$, 4,
+            node_create_leaf("LEIA", "leia"),
+            node_create_leaf("ABRE_PARENTESE", "("), err,
+            node_create_leaf("FECHA_PARENTESE", ")")
+        );
+        yyerrok;
     }
 ;
 
@@ -442,6 +508,7 @@ fator:
         $$ = node_create("fator");
         node_add_child($$, $1);
     }
+    | ABRE_PARENTESE error FECHA_PARENTESE {}
 ;
 
 numero:
@@ -484,6 +551,13 @@ lista_argumentos:
         $$ = node_create("lista_argumentos");
         node_add_child($$, $1);
     }
+    | error VIRGULA expressao {
+        my_yyerror(&ERR_SYN_LISTA_ARGUMENTOS);
+        Node* err = node_create("ERR_SYN_LISTA_ARGUMENTOS");
+        $$ = node_create("lista_argumentos");
+        node_add_children($$, 3, err, node_create_leaf("VIRGULA", ","), $3);
+        yyerrok;
+    }
 ;
 
 vazio: 
@@ -492,21 +566,26 @@ vazio:
 
 %%
 
-int yyerror(char* s){
-    success = false;
-    my_yyerror(&ERR_SYN_IRRECUPERAVEL);
-    my_yyerror(&WAR_SYN_NOT_GEN_SYNTAX_TREE);
+int yyerror(char* s){ }
+
+static int
+yyreport_syntax_error (const yypcontext_t *ctx){
+    if(ctx->yytoken == 0){ // Se o token que deu erro for EOF
+        my_yyerror(&ERR_SYN_EOF_INESPERADO);
+    }
+    // Senão, não faz nada, pois a regra tratará o erro
 }
+
 
 void my_yyerror(const Error* err){
     if(check_key)
         printf("%s\n", err->cod);
     else{
         if(err->type == 'E')
-            printf("\033[1;31mLinha %d: %s\033[0m\n", yylineno, err->msg); // Vermelho
+            printf("\033[1;31mLinha %d: %s (%s)\033[0m\n", yylineno, err->msg, yytext); // Vermelho
         else if(err->type == 'W')
             printf("\033[1;33m%s\033[0m\n", err->msg); // Amarelo
         else
-            printf("Linha %d: %s\n", yylineno, err->msg);
+            printf("Linha %d: %s (%s)\n", yylineno, err->msg, yytext);
     }
 }

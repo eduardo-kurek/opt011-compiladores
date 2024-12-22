@@ -28,6 +28,10 @@ Node* node_create(const char* label){
     node->children = children;
 }
 
+int node_get_child_count(Node* node){
+    return node->child_count;
+}
+
 void node_adjust_children_length(Node* node){
     if(node->child_count == node->child_max){
         int new_size = node->child_max * 1.5;

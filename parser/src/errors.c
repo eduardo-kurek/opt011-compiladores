@@ -16,5 +16,7 @@ Error ERR_SYN_IRRECUPERAVEL = {"ERR-SYN-IRRECUPERAVEL", "Estado irrecuperável."
 Error WAR_SYN_ANA_SUCCESS = {"WAR-SYN-ANA-SUCCESS", "Análise Sintática Executada com Sucesso. Gráfico da Árvore foi gerado.", 'W'};
 Error ERR_SYN_LISTA_ARGUMENTOS = {"ERR-SYN-LISTA-ARGUMENTOS", "Erro na lista de Argumentos.", 'E'};
 Error ERR_SYN_INDICE = {"ERR-SYN-INDICE", "Erro na definicao do indice. Expressao ou indice.", 'E'};
+Error ERR_SYN_PARAMETRO = {"ERR-SYN-PARAMETRO", "Erro na definicao do parametro. Expressao ou parametro.", 'E'};
+Error ERR_SYN_LEIA = {"ERR-SYN-LEIA", "Erro na definicao do comando leia. Identificador esperado.", 'E'};
 Error ERR_SYN_EOF_INESPERADO = {"ERR-SYN-EOF-INESPERADO", "Erro inesperado.", 'E'};
 Error WAR_SYN_OUTPUT_FILE = {"WAR-SYN-OUTPUT-FILE", "Output file: tree.dot", 'W'};

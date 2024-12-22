@@ -1,0 +1,27 @@
+digraph tree {
+    "programa";
+    "lista_declaracoes";
+    "declaracao";
+    "declaracao_variaveis";
+    "tipo";
+    "INTEIRO";
+    "inteiro";
+    "DOIS_PONTOS";
+    ":";
+    "lista_variaveis";
+    "var";
+    "ID";
+    "a";
+    "programa" -> "lista_declaracoes";
+    "lista_declaracoes" -> "declaracao";
+    "declaracao" -> "declaracao_variaveis";
+    "declaracao_variaveis" -> "tipo";
+    "declaracao_variaveis" -> "DOIS_PONTOS";
+    "declaracao_variaveis" -> "lista_variaveis";
+    "tipo" -> "INTEIRO";
+    "INTEIRO" -> "inteiro";
+    "DOIS_PONTOS" -> ":";
+    "lista_variaveis" -> "var";
+    "var" -> "ID";
+    "ID" -> "a";
+}

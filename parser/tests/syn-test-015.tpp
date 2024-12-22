@@ -9,10 +9,10 @@ inteiro principal()
 
     i:= 1
 
-    a[i]:= b := 0
+    a[i] := b := 0
 
     b := b + func(a)
 
-    b := +b + i
+    b := + b + i
     
     retorna(0)

@@ -28,7 +28,7 @@ def test_execute(input_file, args):
     stdout = stdout.replace('\r', '')
 
     path_file = 'tests/' + input_file
-    output_file = open(path_file + ".out", "r")
+    output_file = open(path_file + ".syn.out", "r")
 
     #read whole file to a string
     expected_output = output_file.read()
