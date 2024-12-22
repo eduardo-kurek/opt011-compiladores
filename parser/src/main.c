@@ -31,7 +31,7 @@ int main(int argc, char* argv[]) {
     } while(!feof(yyin));
     
 
-    if(syntax_tree == NULL || node_get_child_count(syntax_tree) == 0){
+    if(syntax_tree == NULL || node_get_child_count(syntax_tree) == 0 || !success){
         my_yyerror(&ERR_SYN_IRRECUPERAVEL);
         my_yyerror(&WAR_SYN_NOT_GEN_SYNTAX_TREE);
         return 1;

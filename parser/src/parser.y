@@ -45,6 +45,7 @@ programa:
         node_add_child($$, $1);
         syntax_tree = $$;
     }
+    | error { success = false; }
 ;
 
 lista_declaracoes:
@@ -71,7 +72,6 @@ declaracao:
         $$ = node_create("declaracao");
         node_add_child($$, $1);
     }
-    | REPITA { printf("Faça nada"); }
 ;
 
 declaracao_variaveis:
@@ -222,7 +222,6 @@ parametro:
             node_create_leaf("DOIS_PONTOS", ":"),
             node_create_leaf("ID", $3)
         );
-        yyerrok; yyclearin;
     }
     | tipo DOIS_PONTOS error {
         my_yyerror(&ERR_SYN_PARAMETRO);
@@ -230,6 +229,17 @@ parametro:
         $$ = node_create("parametro");
         node_add_children($$, 3,
             $1,
+            node_create_leaf("DOIS_PONTOS", ":"),
+            err
+        );
+        yyerrok; yyclearin;
+    }
+    | error DOIS_PONTOS error {
+        my_yyerror(&ERR_SYN_PARAMETRO);
+        Node* err = node_create("ERR_SYN_PARAMETRO");
+        $$ = node_create("parametro");
+        node_add_children($$, 3,
+            err,
             node_create_leaf("DOIS_PONTOS", ":"),
             err
         );
@@ -319,12 +329,75 @@ se:
             node_create_leaf("FIM", "fim")
         );
     }
-    | error expressao ENTAO corpo FIM { printf("Erro 1"); }
-    | SE expressao error corpo FIM { printf("Erro 2"); }
-    | error expressao ENTAO corpo SENAO corpo FIM { printf("Erro 3"); }
-    | SE expressao error corpo SENAO corpo FIM { printf("Erro 4"); }
-    | SE expressao ENTAO corpo error corpo FIM { printf("Erro 5"); }
-    | SE expressao ENTAO corpo SENAO corpo { printf("Erro 6"); }
+    | error expressao ENTAO corpo FIM {
+        my_yyerror(&ERR_SYN_SE);
+        Node* err = node_create("ERR_SYN_SE");
+        $$ = node_create("se");
+        node_add_children($$, 5,
+            err, $2,
+            node_create_leaf("ENTAO", "entao"), $4,
+            node_create_leaf("FIM", "fim")
+        );
+        yyerrok;
+    }
+    | SE expressao error corpo FIM {
+        my_yyerror(&ERR_SYN_SE);
+        Node* err = node_create("ERR_SYN_SE");
+        $$ = node_create("se");
+        node_add_children($$, 5,
+            node_create_leaf("SE", "se"), err,
+            node_create_leaf("ENTAO", "entao"), $4,
+            node_create_leaf("FIM", "fim")
+        );
+        yyerrok;
+    }
+    | error expressao ENTAO corpo SENAO corpo FIM {
+        my_yyerror(&ERR_SYN_SE);
+        Node* err = node_create("ERR_SYN_SE");
+        $$ = node_create("se");
+        node_add_children($$, 7,
+            err, $2,
+            node_create_leaf("ENTAO", "entao"), $4,
+            node_create_leaf("SENAO", "senao"), $6,
+            node_create_leaf("FIM", "fim")
+        );
+        yyerrok;
+    }
+    | SE expressao error corpo SENAO corpo FIM {
+        my_yyerror(&ERR_SYN_SE);
+        Node* err = node_create("ERR_SYN_SE");
+        $$ = node_create("se");
+        node_add_children($$, 7,
+            node_create_leaf("SE", "se"), err,
+            node_create_leaf("ENTAO", "entao"), $4,
+            node_create_leaf("SENAO", "senao"), $6,
+            node_create_leaf("FIM", "fim")
+        );
+        yyerrok;
+    }
+    | SE expressao ENTAO corpo error corpo FIM {
+        my_yyerror(&ERR_SYN_SE);
+        Node* err = node_create("ERR_SYN_SE");
+        $$ = node_create("se");
+        node_add_children($$, 7,
+            node_create_leaf("SE", "se"), $2,
+            node_create_leaf("ENTAO", "entao"), $4,
+            err, $6,
+            node_create_leaf("FIM", "fim")
+        );
+        yyerrok;
+    }
+    | SE expressao ENTAO corpo SENAO corpo {
+        my_yyerror(&ERR_SYN_SE);
+        Node* err = node_create("ERR_SYN_SE");
+        $$ = node_create("se");
+        node_add_children($$, 6,
+            node_create_leaf("SE", "se"), $2,
+            node_create_leaf("ENTAO", "entao"), $4,
+            node_create_leaf("SENAO", "senao"), $6
+        );
+        yyerrok;
+    }
 ;
 
 repita:
@@ -335,8 +408,26 @@ repita:
             node_create_leaf("ATE", "ate"), $4
         );
     }
-    | error corpo ATE expressao {}
-    | REPITA corpo error expressao {}
+    | error corpo ATE expressao {
+        my_yyerror(&ERR_SYN_REPITA);
+        Node* err = node_create("ERR_SYN_REPITA");
+        $$ = node_create("repita");
+        node_add_children($$, 4,
+            err, $2,
+            node_create_leaf("ATE", "ate"), $4
+        );
+        yyerrok;
+    }
+    | REPITA corpo error expressao {
+        my_yyerror(&ERR_SYN_REPITA);
+        Node* err = node_create("ERR_SYN_REPITA");
+        $$ = node_create("repita");
+        node_add_children($$, 4,
+            node_create_leaf("REPITA", "repita"), $2,
+            err, $4
+        );
+        yyerrok;
+    }
 ;
 
 atribuicao:
@@ -582,7 +673,7 @@ void my_yyerror(const Error* err){
         printf("%s\n", err->cod);
     else{
         if(err->type == 'E')
-            printf("\033[1;31mLinha %d: %s (%s)\033[0m\n", yylineno, err->msg, yytext); // Vermelho
+            printf("\033[1;31mLinha %d: %s %s\033[0m\n", yylineno, err->msg, yytext); // Vermelho
         else if(err->type == 'W')
             printf("\033[1;33m%s\033[0m\n", err->msg); // Amarelo
         else

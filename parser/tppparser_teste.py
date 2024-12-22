@@ -32,6 +32,7 @@ def test_execute(input_file, args):
 
     #read whole file to a string
     expected_output = output_file.read()
+    expected_output.replace('\r', '')
 
     output_file.close()
 

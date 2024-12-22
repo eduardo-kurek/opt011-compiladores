@@ -1,18 +1,12 @@
-inteiro: x
-
-x := 10
-
-repita
-
-se x > 0 então
-	escreva(x)
-senão
-	escreva(x + 1)
-fim
+inteiro: a
 
 inteiro principal()
-	se x > 10 então
-		escreva(x)
-	senão
-		escreva(x + 1)
+    func()
+    func(0)
+    func(a,b)
+    func(a,b,c)
+    func(a,b,c,d)
+
+    {func(a,b,,d)}
+    func(a,b,c,)
 fim
