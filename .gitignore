@@ -12,4 +12,13 @@ parser/.pytest_cache
 parser/__pycache__
 parser/tree.dot
 parser/tree.png
+semantica/src/lex.yy.c
+semantica/src/parser.tab.c
+semantica/src/parser.tab.h
+semantica/semantica
+semantica/.pytest_cache
+semantica/__pycache__
+semantica/tree.dot
+semantica/tree.png
+semantica/teste.tpp
 .vscode
