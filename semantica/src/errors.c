@@ -32,7 +32,7 @@ Error ERR_SEM_FUNC_RET_TYPE_ERROR = {"ERR-SEM-FUNC-RET-TYPE-ERROR", "Função co
 Error ERR_SEM_CALL_FUNC_MAIN_NOT_ALLOWED = {"ERR-SEM-CALL-FUNC-MAIN-NOT-ALLOWED", "Função main não pode ser chamada.", 'E'};  // TODO
 Error WAR_SEM_CALL_REC_FUNC_MAIN = {"WAR-SEM-CALL-REC-FUNC-MAIN", "Chamada recursiva da função main.", 'W'};  // TODO
 
-Error ERR_SEM_VAR_NOT_DECL = {"ERR-SEM-VAR-NOT-DECL", "Variável não declarada.", 'E'};  // TODO
+Error ERR_SEM_VAR_NOT_DECL = {"ERR-SEM-VAR-NOT-DECL", "Variável não declarada.", 'E'};
 Error WAR_SEM_VAR_DECL_NOT_INIT = {"WAR-SEM-VAR-DECL-NOT-INIT", "Variável declarada e não inicializada.", 'W'};  // TODO
 Error WAR_SEM_VAR_DECL_NOT_USED = {"WAR-SEM-VAR-DECL-NOT-USED", "Variável declarada e não utilizada.", 'W'};  // TODO
 Error WAR_SEM_VAR_DECL_PREV = {"WAR-SEM-VAR-DECL-PREV", "Variável já declarada.", 'W'};

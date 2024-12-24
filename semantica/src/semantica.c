@@ -7,8 +7,104 @@
 #include "var_table.h"
 
 extern bool check_key;
+extern bool semantic_error;
 
 void declaracao_variaveis(Node* var, char* scope);
+void analisa_expressao(Node* expression, char* scope);
+
+void analisa_var(Node* var, char* scope){
+    char* var_name = var->ch[0]->ch[0]->label;
+    vt_entry* entry = vt_existe(var_name, scope);
+    if(entry == NULL){
+        semantic_error = true;
+        if(check_key)
+            printf("%s", ERR_SEM_VAR_NOT_DECL.cod);
+        else
+            printf("\033[1;31mLinha %d: %s '%s'\033[0m\n", var->ch[0]->line, ERR_SEM_VAR_NOT_DECL.msg, var_name);
+    }
+}
+
+void analisa_fator(Node* fator, char* scope){
+    if(fator->child_count == 1){
+        switch (fator->ch[0]->type){
+            case NT_VAR:
+                analisa_var(fator->ch[0], scope);
+                break;
+        
+            default:
+                break;
+        }
+    }else{
+        analisa_expressao(fator->ch[1], scope);
+    }
+}
+
+void analisa_expressao_unaria(Node* expression, char* scope){
+    if(expression->child_count == 1)
+        analisa_fator(expression->ch[0], scope);
+    else{
+        analisa_fator(expression->ch[1], scope);
+    }
+}
+
+void analisa_expressao_multiplicativa(Node* expression, char* scope){
+    if(expression->child_count == 1)
+        analisa_expressao_unaria(expression->ch[0], scope);
+    else{
+        analisa_expressao_multiplicativa(expression->ch[0], scope);
+        analisa_expressao_unaria(expression->ch[2], scope);
+    }
+}
+
+void analisa_expressao_aditiva(Node* expression, char* scope){
+    if(expression->child_count == 1)
+        analisa_expressao_multiplicativa(expression->ch[0], scope);
+    else{
+        analisa_expressao_aditiva(expression->ch[0], scope);
+        analisa_expressao_multiplicativa(expression->ch[2], scope);
+    }
+}
+
+void analisa_expressao_simples(Node* expression, char* scope){
+    if(expression->child_count == 1)
+        analisa_expressao_aditiva(expression->ch[0], scope);
+    else{
+        analisa_expressao_simples(expression->ch[0], scope);
+        analisa_expressao_aditiva(expression->ch[2], scope);
+    }
+}
+
+void analisa_expressao_logica(Node* expression, char* scope){
+    if(expression->child_count == 1)
+        analisa_expressao_simples(expression->ch[0], scope);
+    else{
+        analisa_expressao_logica(expression->ch[0], scope);
+        analisa_expressao_simples(expression->ch[2], scope);
+    }
+}
+
+void analisa_atribuicao(Node* atribuicao, char* scope){
+    analisa_var(atribuicao->ch[0], scope);
+    analisa_expressao(atribuicao->ch[2], scope);
+}
+
+
+void analisa_expressao(Node* expression, char* scope){
+    Node* next = expression->ch[0];
+    node_type type = next->type;
+    switch (type) {
+        case NT_ATRIBUICAO:
+            analisa_atribuicao(next, scope);
+            break;
+        
+        case NT_EXPRESSAO_LOGICA:
+            analisa_expressao_logica(next, scope);
+            break;
+    
+        default:
+            break;
+    }
+}
 
 void analisa_corpo(Node* body, char* scope){
     if(body->ch[0]->type == NT_VAZIO) return;
@@ -21,7 +117,11 @@ void analisa_corpo(Node* body, char* scope){
         case NT_DECLARACAO_VARIAVEIS:
             declaracao_variaveis(action, scope);
             break;
-    
+
+        case NT_EXPRESSAO:
+            analisa_expressao(action, scope);
+            break;
+
         default:
             break;
     }

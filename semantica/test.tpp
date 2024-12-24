@@ -1,8 +1,7 @@
 flutuante: var_global
-inteiro: a, var_global[2]
+inteiro: a
 
 inteiro principal()
-    c := (23 + 2)
     inteiro: b
-    flutuante: b
+    b := (b + (6 / 2 * 1 +( c / b + 2)))
 fim

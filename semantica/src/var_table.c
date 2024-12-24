@@ -225,6 +225,8 @@ int vt_remove_todas_variaveis_escopo(char *scope){
 vt_entry* vt_existe(char *name, char *scope){
     vt_entry* current = vt->first;
     while(current != NULL){
+        if(strcmp(current->name, name) == 0 && strcmp(current->scope, "global") == 0)
+            return current;
         if(strcmp(current->name, name) == 0 && strcmp(current->scope, scope) == 0)
             return current;
         current = current->next;
