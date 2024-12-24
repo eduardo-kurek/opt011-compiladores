@@ -31,3 +31,16 @@ Error WAR_SEM_FUNC_DECL_NOT_USED = {"WAR-SEM-FUNC-DECL-NOT-USED", "Função decl
 Error ERR_SEM_FUNC_RET_TYPE_ERROR = {"ERR-SEM-FUNC-RET-TYPE-ERROR", "Função com tipo de retorno diferente do esperado.", 'E'};  // TODO
 Error ERR_SEM_CALL_FUNC_MAIN_NOT_ALLOWED = {"ERR-SEM-CALL-FUNC-MAIN-NOT-ALLOWED", "Função main não pode ser chamada.", 'E'};  // TODO
 Error WAR_SEM_CALL_REC_FUNC_MAIN = {"WAR-SEM-CALL-REC-FUNC-MAIN", "Chamada recursiva da função main.", 'W'};  // TODO
+
+Error ERR_SEM_VAR_NOT_DECL = {"ERR-SEM-VAR-NOT-DECL", "Variável não declarada.", 'E'};  // TODO
+Error WAR_SEM_VAR_DECL_NOT_INIT = {"WAR-SEM-VAR-DECL-NOT-INIT", "Variável declarada e não inicializada.", 'W'};  // TODO
+Error WAR_SEM_VAR_DECL_NOT_USED = {"WAR-SEM-VAR-DECL-NOT-USED", "Variável declarada e não utilizada.", 'W'};  // TODO
+Error WAR_SEM_VAR_DECL_PREV = {"WAR-SEM-VAR-DECL-PREV", "Variável já declarada.", 'W'};  // TODO
+
+Error WAR_SEM_ATR_DIFF_TYPES_IMP_COERC_OF_VAR = {"WAR-SEM-ATR-DIFF-TYPES-IMP-COERC-OF-VAR", "Atribuição de tipos diferentes. Coerção implícita de variável.", 'W'};  // TODO
+Error WAR_SEM_ATR_DIFF_TYPES_IMP_COERC_OF_NUM = {"WAR-SEM-ATR-DIFF-TYPES-IMP-COERC-OF-NUM", "Atribuição de tipos diferentes. Coerção implícita de número.", 'W'};  // TODO
+Error WAR_SEM_ATR_DIFF_TYPES_IMP_COERC_OF_EXP = {"WAR-SEM-ATR-DIFF-TYPES-IMP-COERC-OF-EXP", "Atribuição de tipos diferentes. Coerção implícita de expressão.", 'W'};  // TODO
+Error WAR_SEM_ATR_DIFF_TYPES_IMP_COERC_OF_RET_VAL = {"WAR-SEM-ATR-DIFF-TYPES-IMP-COERC-OF-RET-VAL", "Atribuição de tipos diferentes. Coerção implícita de valor de retorno.", 'W'};  // TODO
+
+Error ERR_SEM_ARRAY_INDEX_NOT_INT = {"ERR-SEM-ARRAY-INDEX-NOT-INT", "Índice de array não é inteiro.", 'E'};  // TODO
+Error ERR_SEM_INDEX_OUT_OF_RANGE = {"ERR-SEM-INDEX-OUT-OF-RANGE", "Índice fora do intervalo.", 'E'};  // TODO
