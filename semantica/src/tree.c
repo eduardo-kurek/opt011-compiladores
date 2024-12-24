@@ -25,16 +25,7 @@ static const char* node_type_strings[] = {
 
 int lastId = 0;
 
-struct node{
-    int id;
-    char label[256];
-    struct node** children;
-    int child_count;
-    int child_max;
-    NodeType type;
-};
-
-Node* node_create(const char* label, NodeType type){
+Node* node_create(const char* label, node_type type){
     Node* node = (Node*)malloc(sizeof(Node));
     node->id = lastId++;
     strncpy(node->label, label, sizeof(node->label) - 1);
@@ -44,7 +35,7 @@ Node* node_create(const char* label, NodeType type){
     node->type = type;
 
     Node** children = (Node**)malloc(sizeof(Node*) * INITIAL_CHILD_COUNT);
-    node->children = children;
+    node->ch = children;
 }
 
 int node_get_child_count(Node* node){
@@ -54,14 +45,14 @@ int node_get_child_count(Node* node){
 void node_adjust_children_length(Node* node){
     if(node->child_count == node->child_max){
         int new_size = node->child_max * 1.5;
-        node->children = (Node**)realloc(node->children, sizeof(Node*) * new_size);
+        node->ch = (Node**)realloc(node->ch, sizeof(Node*) * new_size);
         node->child_max = new_size;
     }
 }
 
 void node_add_child(Node *parent, Node *child){
     node_adjust_children_length(parent);
-    parent->children[parent->child_count++] = child;
+    parent->ch[parent->child_count++] = child;
 }
 
 void node_add_children(Node* parent, int num_children, ...) {
@@ -87,8 +78,8 @@ void generate_dot(Node* node, FILE* file){
 
     fprintf(file, "\t%d [label=\"%s (%s)\"];\n", node->id, node->label, node_type_strings[node->type]);
     for(int i = 0; i < node->child_count; i++){
-        fprintf(file, "\t%d -> %d;\n", node->id, node->children[i]->id);
-        generate_dot(node->children[i], file);
+        fprintf(file, "\t%d -> %d;\n", node->id, node->ch[i]->id);
+        generate_dot(node->ch[i], file);
     }
 }
 
@@ -113,16 +104,18 @@ void node_to_dot(Node* root, const char *filename){
 void node_print(Node* node){
     printf("Node: %d\nChild_max: %d\nChild_count: %d\nChildren:", node->id, node->child_max, node->child_count);
     for(int i = 0; i < node->child_count; i++){
-        printf("\tId: %d\n", node->children[i]->id);
+        printf("\tId: %d\n", node->ch[i]->id);
     }
 }
 
-Node* node_create_leaf(const char *parentLabel, NodeType parentType,
-     const char *childLabel, NodeType childType){
+Node* node_create_leaf(const char *parentLabel, node_type parentType,
+     const char *childLabel, node_type childType){
     Node* parent = node_create(parentLabel, parentType);
     Node* child = node_create(childLabel, childType);
     node_add_child(parent, child);
     return parent;
 }
 
-
+const char* node_type_to_string(Node* node){
+    return node_type_strings[node->type];
+}

@@ -1,1 +1,2 @@
-inteiro: a
+flutuante: a, b
+inteiro: c

@@ -2,6 +2,7 @@
 #define TREE_H
 
 #include <stdarg.h>
+#include "types.h"
 
 enum node_type {
     NT_NONE, NT_PROGRAMA, NT_LISTA_DECLARACOES, NT_DECLARACAO, NT_DECLARACAO_VARIAVEIS,
@@ -20,17 +21,24 @@ enum node_type {
     NT_ID, NT_VIRGULA, NT_DOIS_PONTOS
 };
 
-typedef enum node_type NodeType;
-typedef struct node Node;
+typedef struct node{
+    int id;
+    char label[256];
+    struct node** ch;
+    int child_count;
+    int child_max;
+    node_type type;
+} Node;
 
-Node* node_create(const char* label, NodeType type);
+Node* node_create(const char* label, node_type type);
 int node_get_child_count(Node* node);
-Node* node_create_leaf(const char* parentLabel, NodeType parentType,
-     const char* childLabel, NodeType childType);
+Node* node_create_leaf(const char* parentLabel, node_type parentType,
+     const char* childLabel, node_type childType);
 void node_add_child(Node* parent, Node* child);
 void node_add_children(Node* parent, int num_children, ...);
 Node* node_add_new_child(Node* parent, const char* label);
 void node_to_dot(Node* root, const char* filename);
 void node_print(Node* node);
+const char* node_type_to_string(Node* node);
 
 #endif
