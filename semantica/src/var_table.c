@@ -13,6 +13,7 @@ struct var_table_entry {
     int dim_1_size; // Usado para vetores
     int dim_2_size; // Usado para matrizes
     bool initialized;
+    int line;
 };
 
 struct var_table {
@@ -72,6 +73,7 @@ vt_entry** aux_insere_uma_variavel(Node* var_declaration_node, char* scope){
     entry->name = label;
     entry->scope = scope;
     entry->initialized = false;
+    entry->line = var_declaration_node->ch[2]->ch[0]->line;
     if(type == NT_INTEIRO) entry->type = T_INTEIRO;
     else entry->type = T_FLUTUANTE;
     vt_set_entry_dimension(var_declaration_node->ch[2]->ch[0], entry);
@@ -98,6 +100,7 @@ vt_entry** aux_insere_varias_variaveis(Node* var_declaration_node, char* scope, 
     *qtde_variaveis = aux_conta_variaveis(var_declaration_node);
     vt_entry** entries = (vt_entry**)malloc(sizeof(vt_entry*) * (*qtde_variaveis));
     primitive_type type = (var_declaration_node->ch[0]->ch[0]->type == NT_INTEIRO) ? T_INTEIRO : T_FLUTUANTE;
+    int line = var_declaration_node->ch[0]->ch[0]->line;
 
     Node* current = var_declaration_node->ch[2];
     int i = *qtde_variaveis-1;
@@ -119,6 +122,7 @@ vt_entry** aux_insere_varias_variaveis(Node* var_declaration_node, char* scope, 
         entry->scope = scope;
         entry->type = type;
         entry->initialized = false;
+        entry->line = line;
 
         entry->next = vt->first;
         vt->first = entry;
@@ -175,6 +179,7 @@ void vt_imprime(){
             printf("Inicializada: sim\n");
         else
             printf("Inicializada: nao\n");
+        printf("Linha: %d\n", current->line);
         printf("\n");
         current = current->next;
     }
@@ -184,6 +189,7 @@ void vt_destroy(){
     vt_entry* current = vt->first;
     while(current != NULL){
         vt_entry* next = current->next;
+        
         free(current);
         current = next;
     }

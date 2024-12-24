@@ -23,7 +23,7 @@ Error ERR_SYN_LEIA = {"ERR-SYN-LEIA", "Erro na definicao do comando leia. Identi
 Error ERR_SYN_EOF_INESPERADO = {"ERR-SYN-EOF-INESPERADO", "Erro inesperado.", 'E'};
 Error WAR_SYN_OUTPUT_FILE = {"WAR-SYN-OUTPUT-FILE", "Output file: tree.dot", 'W'};
 
-Error ERR_SEM_MAIN_NOT_DECL = {"ERR-SEM-MAIN-NOT-DECL", "Função main não declarada.", 'E'};
+Error ERR_SEM_MAIN_NOT_DECL = {"ERR-SEM-MAIN-NOT-DECL", "Função principal não declarada.", 'E'};
 Error ERR_SEM_CALL_FUNC_NOT_DECL = {"ERR-SEM-CALL-FUNC-NOT-DECL", "Função chamada não declarada.", 'E'};
 Error ERR_SEM_CALL_FUNC_WITH_FEW_ARGS = {"ERR-SEM-CALL-FUNC-WITH-FEW-ARGS", "Função chamada com poucos argumentos.", 'E'};
 Error ERR_SEM_CALL_FUNC_WITH_MANY_ARGS = {"ERR-SEM-CALL-FUNC-WITH-MANY-ARGS", "Função chamada com muitos argumentos.", 'E'};

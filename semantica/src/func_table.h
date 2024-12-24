@@ -13,6 +13,8 @@ primitive_type ft_get_func_return_type(Node* func_node);
 int ft_get_func_param_count(Node* param_list_node);
 param** ft_get_func_params(Node* param_list_node);
 
+ft_entry* ft_get_func_by_name(char* name);
+
 void ft_imprime();
 void ft_destroy();
 

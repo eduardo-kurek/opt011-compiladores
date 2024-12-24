@@ -6,6 +6,8 @@
 
 #define INITIAL_CHILD_COUNT 5
 
+extern int yylineno;
+
 static const char* node_type_strings[] = {
     "NT_NONE", "NT_PROGRAMA", "NT_LISTA_DECLARACOES", "NT_DECLARACAO", "NT_DECLARACAO_VARIAVEIS",
     "NT_INICIALIZACAO_VARIAVEIS", "NT_LISTA_VARIAVEIS", "NT_VAR", "NT_INDICE", "NT_TIPO",
@@ -33,6 +35,7 @@ Node* node_create(const char* label, node_type type){
     node->child_count = 0;
     node->child_max = INITIAL_CHILD_COUNT;
     node->type = type;
+    node->line = yylineno;
 
     Node** children = (Node**)malloc(sizeof(Node*) * INITIAL_CHILD_COUNT);
     node->ch = children;
@@ -76,7 +79,7 @@ Node* node_add_new_child(Node* parent, const char* label){
 void generate_dot(Node* node, FILE* file){
     if(node == NULL) return;
 
-    fprintf(file, "\t%d [label=\"%s (%s)\"];\n", node->id, node->label, node_type_strings[node->type]);
+    fprintf(file, "\t%d [label=\"%s (%s) %d\"];\n", node->id, node->label, node_type_strings[node->type], node->line);
     for(int i = 0; i < node->child_count; i++){
         fprintf(file, "\t%d -> %d;\n", node->id, node->ch[i]->id);
         generate_dot(node->ch[i], file);

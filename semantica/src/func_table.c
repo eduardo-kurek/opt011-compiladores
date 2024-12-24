@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <string.h>
 
 struct param{
     char* label;
@@ -109,6 +110,16 @@ param** ft_get_func_params(Node* param_list_node){
     if(qtParams == 0) return NULL;
     if(qtParams == 1) return aux_trata_um_parametro(param_list_node);
     return aux_trata_varios_parametros(param_list_node, qtParams);
+}
+
+ft_entry*ft_get_func_by_name(char *name){
+    ft_entry* current = ft->first;
+    while(current != NULL){
+        if(strcmp(current->name, name) == 0)
+            return current;
+        current = current->next;
+    }
+    return NULL;
 }
 
 void ft_imprime(){

@@ -28,6 +28,7 @@ typedef struct node{
     int child_count;
     int child_max;
     node_type type;
+    int line;
 } Node;
 
 Node* node_create(const char* label, node_type type);
