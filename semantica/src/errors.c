@@ -22,3 +22,12 @@ Error ERR_SYN_REPITA = {"ERR-SYN-REPITA", "Erro na definicao do comando repita. 
 Error ERR_SYN_LEIA = {"ERR-SYN-LEIA", "Erro na definicao do comando leia. Identificador esperado.", 'E'};
 Error ERR_SYN_EOF_INESPERADO = {"ERR-SYN-EOF-INESPERADO", "Erro inesperado.", 'E'};
 Error WAR_SYN_OUTPUT_FILE = {"WAR-SYN-OUTPUT-FILE", "Output file: tree.dot", 'W'};
+
+Error ERR_SEM_MAIN_NOT_DECL = {"ERR-SEM-MAIN-NOT-DECL", "Função main não declarada.", 'E'};
+Error ERR_SEM_CALL_FUNC_NOT_DECL = {"ERR-SEM-CALL-FUNC-NOT-DECL", "Função chamada não declarada.", 'E'};
+Error ERR_SEM_CALL_FUNC_WITH_FEW_ARGS = {"ERR-SEM-CALL-FUNC-WITH-FEW-ARGS", "Função chamada com poucos argumentos.", 'E'};
+Error ERR_SEM_CALL_FUNC_WITH_MANY_ARGS = {"ERR-SEM-CALL-FUNC-WITH-MANY-ARGS", "Função chamada com muitos argumentos.", 'E'};
+Error WAR_SEM_FUNC_DECL_NOT_USED = {"WAR-SEM-FUNC-DECL-NOT-USED", "Função declarada e não utilizada.", 'W'};
+Error ERR_SEM_FUNC_RET_TYPE_ERROR = {"ERR-SEM-FUNC-RET-TYPE-ERROR", "Função com tipo de retorno diferente do esperado.", 'E'};
+Error ERR_SEM_CALL_FUNC_MAIN_NOT_ALLOWED = {"ERR-SEM-CALL-FUNC-MAIN-NOT-ALLOWED", "Função main não pode ser chamada.", 'E'};
+Error WAR_SEM_CALL_REC_FUNC_MAIN = {"WAR-SEM-CALL-REC-FUNC-MAIN", "Chamada recursiva da função main.", 'W'};
