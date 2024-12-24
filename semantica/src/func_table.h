@@ -15,6 +15,9 @@ param** ft_get_func_params(Node* param_list_node);
 
 ft_entry* ft_get_func_by_name(char* name);
 
+void ft_verifica_principal_existe();
+void ft_verifica_declarada_nao_chamada();
+
 void ft_imprime();
 void ft_destroy();
 

@@ -1,8 +1,11 @@
 #include "func_table.h"
+#include "errors.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
+
+extern bool check_key;
 
 struct param{
     char* label;
@@ -14,6 +17,7 @@ typedef struct func_table_entry {
     char* name;
     int param_count;
     param** params;
+    bool used;
 
     struct func_table_entry* next; // Lista encadeada
 } ft_entry;
@@ -32,16 +36,17 @@ void ft_init(){
 }
 
 ft_entry* ft_insere(Node* func_node){
-    ft_entry* new_entry = (ft_entry*)malloc(sizeof(ft_entry));
-    new_entry->name = ft_get_func_name(func_node);
-    new_entry->return_type = ft_get_func_return_type(func_node);
-    new_entry->param_count = ft_get_func_param_count(func_node->ch[2]);
-    new_entry->params = ft_get_func_params(func_node->ch[2]);
+    ft_entry* entry = (ft_entry*)malloc(sizeof(ft_entry));
+    entry->name = ft_get_func_name(func_node);
+    entry->return_type = ft_get_func_return_type(func_node);
+    entry->param_count = ft_get_func_param_count(func_node->ch[2]);
+    entry->params = ft_get_func_params(func_node->ch[2]);
+    entry->used = false;
 
-    new_entry->next = ft->first;
-    ft->first = new_entry;
+    entry->next = ft->first;
+    ft->first = entry;
     ft->entry_count++;
-    return new_entry;
+    return entry;
 }
 
 char* ft_get_func_name(Node* func_node){ 
@@ -120,6 +125,29 @@ ft_entry*ft_get_func_by_name(char *name){
         current = current->next;
     }
     return NULL;
+}
+
+void ft_verifica_principal_existe(){
+    ft_entry* entry = ft_get_func_by_name("principal");
+    if(entry == NULL){
+        if(check_key) printf("%s\n", ERR_SEM_MAIN_NOT_DECL.cod);
+        else printf("\033[1;31m%s\033[0m\n", ERR_SEM_MAIN_NOT_DECL.msg);
+    }
+}
+
+void ft_verifica_declarada_nao_chamada(){
+    ft_entry* current = ft->first;
+    while(current != NULL){
+        if(strcmp(current->name, "principal") == 0){
+            current = current->next;
+            continue;
+        }
+        if(!current->used){
+            if(check_key) printf("%s\n", WAR_SEM_FUNC_DECL_NOT_USED.cod);
+            else printf("\033[1;33m%s %s\033[0m\n", WAR_SEM_FUNC_DECL_NOT_USED.msg, current->name);
+        }
+        current = current->next;
+    }
 }
 
 void ft_imprime(){

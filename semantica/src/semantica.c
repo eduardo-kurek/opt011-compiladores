@@ -37,22 +37,19 @@ void fazer_analise(Node* node){
         fazer_analise(node->ch[i]);
 }
 
-void verifica_principal_existe(){
-    ft_entry* entry = ft_get_func_by_name("principal");
-    if(entry == NULL){
-        if(check_key)
-            printf("%s\n", ERR_SEM_MAIN_NOT_DECL.cod);
-        else
-            printf("\033[1;31m%s\033[0m\n", ERR_SEM_MAIN_NOT_DECL.msg);
-    }
+void verifica_func_declarada_nao_chamada(){
+
 }
+
 
 void analise_semantica(Node* node){
     ft_init();
     vt_init();
 
     fazer_analise(node);
-    verifica_principal_existe();
+
+    ft_verifica_principal_existe();
+    ft_verifica_declarada_nao_chamada();
 
     //ft_imprime();
     //vt_imprime();
