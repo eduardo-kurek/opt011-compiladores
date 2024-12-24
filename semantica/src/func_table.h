@@ -3,6 +3,28 @@
 
 #include "tree.h"
 #include "types.h"
+#include <stdbool.h>
+
+struct param{
+    char* label;
+    primitive_type type;
+};
+
+typedef struct func_table_entry {
+    primitive_type return_type;
+    char* name;
+    int param_count;
+    param** params;
+    bool used;
+    int line;
+
+    struct func_table_entry* next; // Lista encadeada
+} ft_entry;
+
+struct func_table {
+    ft_entry* first;
+    int entry_count;
+};
 
 void ft_init();
 ft_entry* ft_insere(Node* func_node);

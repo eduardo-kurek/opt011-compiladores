@@ -1,3 +1,8 @@
-inteiro principal() fim
-inteiro um_parametro(inteiro: a) fim
-inteiro dois_parametros(inteiro: a, inteiro: b) fim
+flutuante: var_global
+inteiro: a, var_global[2]
+
+inteiro principal()
+    c := (23 + 2)
+    inteiro: b
+    flutuante: b
+fim

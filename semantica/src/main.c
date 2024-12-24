@@ -14,6 +14,7 @@ extern FILE* yyin;
 extern void my_yyerror(const Error* err);
 extern bool success;
 extern bool fatal_error;
+bool semantic_error = false;
 
 void yyfatal_error(const Error* err);
 bool stringHasPoint(const char* str);
@@ -48,6 +49,11 @@ int main(int argc, char* argv[]) {
 
     printf("Passando para a analise semantica\n");
     analise_semantica(syntax_tree);
+
+    if(semantic_error){
+        printf("Erro semantico encontrado\n");
+        return 3;
+    }
 
     return 0;
 }

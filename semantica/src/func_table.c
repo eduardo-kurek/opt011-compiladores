@@ -6,26 +6,7 @@
 #include <string.h>
 
 extern bool check_key;
-
-struct param{
-    char* label;
-    primitive_type type;
-};
-
-typedef struct func_table_entry {
-    primitive_type return_type;
-    char* name;
-    int param_count;
-    param** params;
-    bool used;
-
-    struct func_table_entry* next; // Lista encadeada
-} ft_entry;
-
-struct func_table {
-    ft_entry* first;
-    int entry_count;
-};
+extern bool semantic_error;
 
 func_table* ft;
 
@@ -42,6 +23,7 @@ ft_entry* ft_insere(Node* func_node){
     entry->param_count = ft_get_func_param_count(func_node->ch[2]);
     entry->params = ft_get_func_params(func_node->ch[2]);
     entry->used = false;
+    entry->line = func_node->ch[0]->line;
 
     entry->next = ft->first;
     ft->first = entry;
@@ -130,6 +112,7 @@ ft_entry*ft_get_func_by_name(char *name){
 void ft_verifica_principal_existe(){
     ft_entry* entry = ft_get_func_by_name("principal");
     if(entry == NULL){
+        semantic_error = true;
         if(check_key) printf("%s\n", ERR_SEM_MAIN_NOT_DECL.cod);
         else printf("\033[1;31m%s\033[0m\n", ERR_SEM_MAIN_NOT_DECL.msg);
     }
@@ -167,6 +150,7 @@ void ft_imprime(){
                 printf("Tipo: inteiro\n");
             else
                 printf("Tipo: flutuante\n");
+            printf("Linha: %d\n", current->line);
             printf("\n");
         }
         current = current->next;
