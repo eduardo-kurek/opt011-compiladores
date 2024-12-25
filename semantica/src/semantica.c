@@ -11,6 +11,7 @@ extern bool semantic_error;
 
 void analisa_declaracao_variaveis(Node* var, char* scope);
 void analisa_expressao(Node* expression, char* scope);
+void analisa_corpo(Node* body, char* scope);
 
 void analisa_var(Node* var, char* scope){
     char* var_name = var->ch[0]->ch[0]->label;
@@ -90,6 +91,26 @@ void analisa_atribuicao(Node* atribuicao, char* scope){
     vt_set_atribuida(atribuicao->ch[0]->ch[0]->ch[0]->label, scope);
 }
 
+void analisa_escreva(Node* escreva, char* scope){
+    analisa_expressao(escreva->ch[2], scope);
+}
+
+void analisa_leia(Node* leia, char* scope){
+    analisa_var(leia->ch[2], scope);
+    vt_set_atribuida(leia->ch[2]->ch[0]->ch[0]->label, scope);
+}
+
+void analisa_repita(Node* repita, char* scope){
+    analisa_corpo(repita->ch[1], scope);
+    analisa_expressao(repita->ch[3], scope);
+}
+
+void analisa_se(Node* se, char* scope){
+    analisa_expressao(se->ch[1], scope);
+    analisa_corpo(se->ch[3], scope);
+    if(se->child_count == 7)
+        analisa_corpo(se->ch[5], scope); // Corpo do senão
+}
 
 void analisa_expressao(Node* expression, char* scope){
     Node* next = expression->ch[0];
@@ -122,6 +143,22 @@ void analisa_corpo(Node* body, char* scope){
 
         case NT_EXPRESSAO:
             analisa_expressao(action, scope);
+            break;
+        
+        case NT_SE:
+            analisa_se(action, scope);
+            break;
+
+        case NT_REPITA:
+            analisa_repita(action, scope);
+            break;
+
+        case NT_LEIA:
+            analisa_leia(action, scope);
+            break;
+
+        case NT_ESCREVA:
+            analisa_escreva(action, scope);
             break;
 
         default:

@@ -1,10 +1,10 @@
-inteiro: a, c[2], d[1][3]
-
-c := 1
-
-principal()
-    inteiro: b
-    flutuante: d
-    b := 2
-    a := e
+inteiro principal()
+    se 5 > 2 então
+        inteiro: a
+        a := (2+3) * 10
+        repita
+            escreva(a)
+            leia(b)
+        até 5 > (x > 2) + a
+    fim
 fim
