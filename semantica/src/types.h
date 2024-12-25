@@ -4,7 +4,7 @@
 typedef enum node_type node_type;
 
 typedef enum primitive_type {
-    T_INTEIRO, T_FLUTUANTE
+    T_INTEIRO, T_FLUTUANTE, T_VAZIO
 } primitive_type;
 
 typedef enum var_dimension {

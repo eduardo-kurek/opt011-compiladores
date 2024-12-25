@@ -20,8 +20,13 @@ ft_entry* ft_insere(Node* func_node){
     ft_entry* entry = (ft_entry*)malloc(sizeof(ft_entry));
     entry->name = ft_get_func_name(func_node);
     entry->return_type = ft_get_func_return_type(func_node);
-    entry->param_count = ft_get_func_param_count(func_node->ch[2]);
-    entry->params = ft_get_func_params(func_node->ch[2]);
+    if(func_node->child_count == 1){
+        entry->param_count = ft_get_func_param_count(func_node->ch[0]->ch[2]);
+        entry->params = ft_get_func_params(func_node->ch[0]->ch[2]);
+    }else{
+        entry->param_count = ft_get_func_param_count(func_node->ch[1]->ch[2]);
+        entry->params = ft_get_func_params(func_node->ch[1]->ch[2]);
+    }
     entry->used = false;
     entry->line = func_node->ch[0]->line;
 
@@ -32,10 +37,12 @@ ft_entry* ft_insere(Node* func_node){
 }
 
 char* ft_get_func_name(Node* func_node){ 
-    return func_node->ch[1]->ch[0]->ch[0]->label;
+    if(func_node->child_count == 1) return func_node->ch[0]->ch[0]->ch[0]->label;
+    else return func_node->ch[1]->ch[0]->ch[0]->label;
 }
 
 primitive_type ft_get_func_return_type(Node* func_node){
+    if(func_node->child_count == 1) return T_VAZIO;
     if(func_node->ch[0]->ch[0]->type == NT_INTEIRO)
         return T_INTEIRO;
     return T_FLUTUANTE;
@@ -140,8 +147,10 @@ void ft_imprime(){
         printf("Funcao: %s\n", current->name);
         if(current->return_type == T_INTEIRO)
             printf("Retorno: inteiro\n");
-        else
+        else if (current->return_type == T_FLUTUANTE)
             printf("Retorno: flutuante\n");
+        else
+            printf("Retorno: vazio\n");
         printf("Qtde parametros: %d\n\n", current->param_count);
         for(int i = 0; i < current->param_count; i++){
             printf("Parametro %d:\n", i+1);

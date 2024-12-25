@@ -1,7 +1,10 @@
-flutuante: var_global
-inteiro: a
+inteiro: a, c[2], d[1][3]
 
-inteiro principal()
+c := 1
+
+principal()
     inteiro: b
-    b := (b + (6 / 2 * 1 +( c / b + 2)))
+    flutuante: d
+    b := 2
+    a := e
 fim

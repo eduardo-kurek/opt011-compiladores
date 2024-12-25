@@ -9,7 +9,7 @@
 extern bool check_key;
 extern bool semantic_error;
 
-void declaracao_variaveis(Node* var, char* scope);
+void analisa_declaracao_variaveis(Node* var, char* scope);
 void analisa_expressao(Node* expression, char* scope);
 
 void analisa_var(Node* var, char* scope){
@@ -29,6 +29,7 @@ void analisa_fator(Node* fator, char* scope){
         switch (fator->ch[0]->type){
             case NT_VAR:
                 analisa_var(fator->ch[0], scope);
+                vt_set_used(fator->ch[0]->ch[0]->ch[0]->label, scope);
                 break;
         
             default:
@@ -86,6 +87,7 @@ void analisa_expressao_logica(Node* expression, char* scope){
 void analisa_atribuicao(Node* atribuicao, char* scope){
     analisa_var(atribuicao->ch[0], scope);
     analisa_expressao(atribuicao->ch[2], scope);
+    vt_set_atribuida(atribuicao->ch[0]->ch[0]->ch[0]->label, scope);
 }
 
 
@@ -115,7 +117,7 @@ void analisa_corpo(Node* body, char* scope){
 
     switch(type){
         case NT_DECLARACAO_VARIAVEIS:
-            declaracao_variaveis(action, scope);
+            analisa_declaracao_variaveis(action, scope);
             break;
 
         case NT_EXPRESSAO:
@@ -127,54 +129,76 @@ void analisa_corpo(Node* body, char* scope){
     }
 }
 
-void declaracao_funcao(Node* func){
+void analisa_cabecalho(Node* cabecalho, char* scope){
+    char* func_name = cabecalho->ch[1]->ch[0]->ch[0]->label;
+    ft_entry* entry = ft_get_func_by_name(func_name);
+    entry->used = true;
+}
+
+void analisa_declaracao_funcao(Node* func){
     ft_entry* entry = ft_insere(func);
     for(int i = 0; i < entry->param_count; i++){
         vt_insere_parametro(entry->params[i]->label, entry->params[i]->type, entry->name, entry->line);
     }
 
-    analisa_corpo(func->ch[1]->ch[4], entry->name);
+    if(func->child_count == 1)
+        analisa_corpo(func->ch[0]->ch[4], entry->name);
+    else
+        analisa_corpo(func->ch[1]->ch[4], entry->name);
 
-    vt_remove_todas_variaveis_escopo(entry->name);
 }
 
-void declaracao_variaveis(Node* var, char* scope){
+void analisa_inicializacao_variaveis(Node* var_init, char* scope){
+    analisa_atribuicao(var_init->ch[0], scope);
+}
+
+void analisa_declaracao_variaveis(Node* var_declaration, char* scope){
     int qtde_variaveis;
-    vt_entry** entries = vt_insere(var, scope, &qtde_variaveis);
-
-    free(entries);
+    vt_insere(var_declaration, scope, &qtde_variaveis);
 }
 
-void fazer_analise(Node* node){
-    if(node->type == NT_NONE) return;
+void analisa_declaracao(Node* declaration, char* scope){
+    switch (declaration->ch[0]->type){
+        case NT_DECLARACAO_VARIAVEIS:
+            analisa_declaracao_variaveis(declaration->ch[0], scope);
+            break;
+        
+        case NT_INICIALIZACAO_VARIAVEIS:
+            analisa_inicializacao_variaveis(declaration->ch[0], scope);
+            break;
 
-    if(node->type == NT_DECLARACAO_FUNCAO){
-        declaracao_funcao(node);
-        return;
+        case NT_DECLARACAO_FUNCAO:
+            analisa_declaracao_funcao(declaration->ch[0]);
+            break;
+    
+        default:
+            break;
     }
+}
 
-    if(node->type == NT_DECLARACAO_VARIAVEIS){
-        declaracao_variaveis(node, "global");
-        return;
+void analisa_lista_declaracoes(Node* declaration_list, char* scope){
+    if(declaration_list->child_count == 2){
+        analisa_lista_declaracoes(declaration_list->ch[0], scope);
+        analisa_declaracao(declaration_list->ch[1], scope);
+    }else{
+        analisa_declaracao(declaration_list->ch[0], scope);
     }
-
-    for(int i = 0; i < node->child_count; i++)
-        fazer_analise(node->ch[i]);
 }
 
-void verifica_func_declarada_nao_chamada(){
-
+void analisa_programa(Node* program){
+    analisa_lista_declaracoes(program->ch[0], "global");
 }
-
 
 void analise_semantica(Node* node){
     ft_init();
     vt_init();
 
-    fazer_analise(node);
+    analisa_programa(node);
 
     ft_verifica_principal_existe();
     ft_verifica_declarada_nao_chamada();
+    vt_verifica_nao_inicializada();
+    vt_verifica_nao_utilizada();
 
     //ft_imprime();
     //vt_imprime();
