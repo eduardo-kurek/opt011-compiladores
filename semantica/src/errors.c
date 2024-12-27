@@ -29,8 +29,8 @@ Error ERR_SEM_CALL_FUNC_WITH_FEW_ARGS = {"ERR-SEM-CALL-FUNC-WITH-FEW-ARGS", "Fun
 Error ERR_SEM_CALL_FUNC_WITH_MANY_ARGS = {"ERR-SEM-CALL-FUNC-WITH-MANY-ARGS", "Função chamada com muitos argumentos.", 'E'};
 Error WAR_SEM_FUNC_DECL_NOT_USED = {"WAR-SEM-FUNC-DECL-NOT-USED", "Função declarada e não utilizada.", 'W'};
 Error ERR_SEM_FUNC_RET_TYPE_ERROR = {"ERR-SEM-FUNC-RET-TYPE-ERROR", "Função com tipo de retorno diferente do esperado.", 'E'};  // TODO
-Error ERR_SEM_CALL_FUNC_MAIN_NOT_ALLOWED = {"ERR-SEM-CALL-FUNC-MAIN-NOT-ALLOWED", "Função principal não pode ser chamada.", 'E'};  // TODO
-Error WAR_SEM_CALL_REC_FUNC_MAIN = {"WAR-SEM-CALL-REC-FUNC-MAIN", "Chamada recursiva da função principal.", 'W'};  // TODO
+Error ERR_SEM_CALL_FUNC_MAIN_NOT_ALLOWED = {"ERR-SEM-CALL-FUNC-MAIN-NOT-ALLOWED", "Função principal não pode ser chamada.", 'E'};
+Error WAR_SEM_CALL_REC_FUNC_MAIN = {"WAR-SEM-CALL-REC-FUNC-MAIN", "Chamada recursiva da função principal.", 'W'};
 
 Error ERR_SEM_VAR_NOT_DECL = {"ERR-SEM-VAR-NOT-DECL", "Variável não declarada.", 'E'};
 Error WAR_SEM_VAR_DECL_NOT_INIT = {"WAR-SEM-VAR-DECL-NOT-INIT", "Variável declarada e não inicializada.", 'W'};
