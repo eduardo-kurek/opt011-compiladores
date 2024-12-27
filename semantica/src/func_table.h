@@ -37,8 +37,13 @@ param** ft_get_func_params(Node* param_list_node);
 
 ft_entry* ft_get_func_by_name(char* name);
 
+void ft_set_funcao_utilizada(Node* name);
+
 void ft_verifica_principal_existe();
 void ft_verifica_declarada_nao_chamada();
+ft_entry* ft_verifica_funcao_existe(char* name);
+void ft_verifica_quantidade_parametros(ft_entry* func, Node* lista_argumentos);
+bool ft_verifica_chamada_para_principal(char* name, char* scope);
 
 void ft_imprime();
 void ft_destroy();

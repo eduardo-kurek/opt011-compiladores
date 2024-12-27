@@ -13,6 +13,32 @@ void analisa_declaracao_variaveis(Node* var, char* scope);
 void analisa_expressao(Node* expression, char* scope);
 void analisa_corpo(Node* body, char* scope);
 
+void analisa_lista_argumentos(Node* lista_argumentos, char* scope){
+    if(lista_argumentos->child_count == 3){
+        analisa_lista_argumentos(lista_argumentos->ch[0], scope);
+        analisa_expressao(lista_argumentos->ch[2], scope);
+    }else{
+        if(lista_argumentos->ch[0]->type == NT_VAZIO) return;
+        analisa_expressao(lista_argumentos->ch[0], scope);
+    }
+}
+
+void analisa_numero(Node* numero, char* scope){
+    // TODO
+}
+
+void analisa_chamada_funcao(Node* chamada_funcao, char* scope){
+    // Verificando a quantidade de paramaetros da função
+    if(!ft_verifica_chamada_para_principal(chamada_funcao->ch[0]->ch[0]->label, scope))
+        return;
+    ft_entry* func = ft_verifica_funcao_existe(chamada_funcao->ch[0]->ch[0]->label);
+    if(func){
+        ft_set_funcao_utilizada(chamada_funcao->ch[0]->ch[0]);
+        ft_verifica_quantidade_parametros(func, chamada_funcao->ch[2]);
+    }
+    analisa_lista_argumentos(chamada_funcao->ch[2], scope);
+}
+
 void analisa_var(Node* var, char* scope){
     char* var_name = var->ch[0]->ch[0]->label;
     vt_entry* entry = vt_existe(var_name, scope);
@@ -27,12 +53,20 @@ void analisa_var(Node* var, char* scope){
 
 void analisa_fator(Node* fator, char* scope){
     if(fator->child_count == 1){
-        switch (fator->ch[0]->type){
+        Node* child = fator->ch[0];
+        switch (child->type){
             case NT_VAR:
-                analisa_var(fator->ch[0], scope);
-                vt_set_used(fator->ch[0]->ch[0]->ch[0]->label, scope);
+                analisa_var(child, scope);
+                vt_set_used(child->ch[0]->ch[0]->label, scope);
                 break;
-        
+
+            case NT_CHAMADA_FUNCAO:
+                analisa_chamada_funcao(child, scope);
+                break;
+            
+            case NT_NUMERO:
+                analisa_numero(child, scope);
+
             default:
                 break;
         }
@@ -89,6 +123,10 @@ void analisa_atribuicao(Node* atribuicao, char* scope){
     analisa_var(atribuicao->ch[0], scope);
     analisa_expressao(atribuicao->ch[2], scope);
     vt_set_atribuida(atribuicao->ch[0]->ch[0]->ch[0]->label, scope);
+}
+
+void analisa_retorna(Node* retorna, char* scope){
+    analisa_expressao(retorna->ch[2], scope);
 }
 
 void analisa_escreva(Node* escreva, char* scope){
@@ -159,6 +197,10 @@ void analisa_corpo(Node* body, char* scope){
 
         case NT_ESCREVA:
             analisa_escreva(action, scope);
+            break;
+
+        case NT_RETORNA:
+            analisa_retorna(action, scope);
             break;
 
         default:

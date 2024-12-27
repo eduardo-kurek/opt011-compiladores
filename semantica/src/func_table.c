@@ -7,6 +7,7 @@
 
 extern bool check_key;
 extern bool semantic_error;
+extern int yylineno;
 
 func_table* ft;
 
@@ -106,7 +107,7 @@ param** ft_get_func_params(Node* param_list_node){
     return aux_trata_varios_parametros(param_list_node, qtParams);
 }
 
-ft_entry*ft_get_func_by_name(char *name){
+ft_entry* ft_get_func_by_name(char *name){
     ft_entry* current = ft->first;
     while(current != NULL){
         if(strcmp(current->name, name) == 0)
@@ -114,6 +115,11 @@ ft_entry*ft_get_func_by_name(char *name){
         current = current->next;
     }
     return NULL;
+}
+
+void ft_set_funcao_utilizada(Node *name){
+    ft_entry* entry = ft_get_func_by_name(name->label);
+    entry->used = true;
 }
 
 void ft_verifica_principal_existe(){
@@ -134,10 +140,62 @@ void ft_verifica_declarada_nao_chamada(){
         }
         if(!current->used){
             if(check_key) printf("%s\n", WAR_SEM_FUNC_DECL_NOT_USED.cod);
-            else printf("\033[1;33m%s %s\033[0m\n", WAR_SEM_FUNC_DECL_NOT_USED.msg, current->name);
+            else printf("\033[1;33mLinha %d: %s %s\033[0m\n", current->line, WAR_SEM_FUNC_DECL_NOT_USED.msg, current->name);
         }
         current = current->next;
     }
+}
+
+ft_entry* ft_verifica_funcao_existe(char* name){
+    if(strcmp(name, "principal") == 0){
+        semantic_error = true;
+        if(check_key) printf("%s\n", ERR_SEM_CALL_FUNC_MAIN_NOT_ALLOWED.cod);
+        else printf("\033[1;31mLinha %d: %s\033[0m\n", yylineno, ERR_SEM_CALL_FUNC_MAIN_NOT_ALLOWED.msg);
+        return NULL;
+    }
+    ft_entry* func = ft_get_func_by_name(name);
+    if(func == NULL){
+        semantic_error = true;
+        if(check_key) printf("%s\n", ERR_SEM_CALL_FUNC_NOT_DECL.cod);
+        else printf("\033[1;31mLinha %d: %s %s\033[0m\n", yylineno, ERR_SEM_CALL_FUNC_NOT_DECL.msg, name);
+        return NULL;
+    }
+    return func;
+}
+
+void ft_verifica_quantidade_parametros(ft_entry *func, Node *lista_argumentos){
+    int qtArgs = 0;
+    Node* current = lista_argumentos;
+    while(true){
+        qtArgs++;
+        if(current->child_count == 3) current = current->ch[0];
+        else break;
+    }
+    if(qtArgs < func->param_count){
+        semantic_error = true;
+        if(check_key) printf("%s\n", ERR_SEM_CALL_FUNC_WITH_FEW_ARGS.cod);
+        else printf("\033[1;31mLinha %d: %s %s\033[0m\n", yylineno, ERR_SEM_CALL_FUNC_WITH_FEW_ARGS.msg, func->name);
+    } else if(qtArgs > func->param_count){
+        semantic_error = true;
+        if(check_key) printf("%s\n", ERR_SEM_CALL_FUNC_WITH_MANY_ARGS.cod);
+        else printf("\033[1;31mLinha %d: %s %s\033[0m\n", yylineno, ERR_SEM_CALL_FUNC_WITH_MANY_ARGS.msg, func->name);
+    }
+}
+
+bool ft_verifica_chamada_para_principal(char *name, char* scope){
+    bool isPrincipal = strcmp(name, "principal") == 0;
+    if(isPrincipal){
+        if(strcmp(scope, "principal") == 0){
+            if(check_key) printf("%s\n", WAR_SEM_CALL_REC_FUNC_MAIN.cod);
+            else printf("\033[1;33mLinha %d: %s\033[0m\n", yylineno, WAR_SEM_CALL_REC_FUNC_MAIN.msg);
+        } else {
+            semantic_error = true;
+            if(check_key) printf("%s\n", ERR_SEM_CALL_FUNC_MAIN_NOT_ALLOWED.cod);
+            else printf("\033[1;31mLinha %d: %s\033[0m\n", yylineno, ERR_SEM_CALL_FUNC_MAIN_NOT_ALLOWED.msg);
+        }
+        return false;
+    }
+    return true;
 }
 
 void ft_imprime(){
