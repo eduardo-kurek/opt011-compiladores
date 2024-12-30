@@ -58,7 +58,7 @@ vt_entry** aux_insere_uma_variavel(Node* var_declaration_node, char* scope, int*
     vt_entry* existingVar = vt_existe(label, scope);
     if(existingVar){
         if(check_key)
-            printf("%s", WAR_SEM_VAR_DECL_PREV.cod);
+            printf("%s\n", WAR_SEM_VAR_DECL_PREV.cod);
         else{
             printf("\033[1;31mLinha %d: %s Variável '%s', tipo: %s\033[0m\n", var_declaration_node->ch[0]->line,
                 WAR_SEM_VAR_DECL_PREV.msg, label, 
@@ -119,7 +119,7 @@ vt_entry** aux_insere_varias_variaveis(Node* var_declaration_node, char* scope, 
         vt_entry* existingVar = vt_existe(label, scope);
         if(existingVar){
             if(check_key)
-                printf("%s", WAR_SEM_VAR_DECL_PREV.cod);
+                printf("%s\n", WAR_SEM_VAR_DECL_PREV.cod);
             else{
                 printf("\033[1;31mLinha %d: %s Variável '%s', tipo: %s\033[0m\n", line,
                     WAR_SEM_VAR_DECL_PREV.msg, label, 

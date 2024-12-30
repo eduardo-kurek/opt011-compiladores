@@ -163,14 +163,22 @@ ft_entry* ft_verifica_funcao_existe(char* name){
     return func;
 }
 
-void ft_verifica_quantidade_parametros(ft_entry *func, Node *lista_argumentos){
-    int qtArgs = 0;
+int conta_argumentos(Node* lista_argumentos){
+    if(lista_argumentos->ch[0]->type == NT_VAZIO) return 0;
+    if(lista_argumentos->child_count == 1) return 1;
+
+    int qtArgs = 1;
     Node* current = lista_argumentos;
-    while(true){
-        qtArgs++;
+    while(1){
         if(current->child_count == 3) current = current->ch[0];
         else break;
+        qtArgs++;
     }
+    return qtArgs;
+}
+
+void ft_verifica_quantidade_parametros(ft_entry *func, Node *lista_argumentos){
+    int qtArgs = conta_argumentos(lista_argumentos);
     if(qtArgs < func->param_count){
         semantic_error = true;
         if(check_key) printf("%s\n", ERR_SEM_CALL_FUNC_WITH_FEW_ARGS.cod);

@@ -9,6 +9,17 @@
 extern bool check_key;
 extern bool semantic_error;
 
+// Variáveis globais para armazenar o valor de uma expressão
+bool expression_is_constant = true;
+primitive_type expression_type;
+primitive_type expected_type; // Tipo esperado no lado direito de uma atribuição
+primitive_type expected_return_type; // Tipo esperado no retorno de uma função
+bool func_has_return = false; // Indica se a função tem retorno
+int int_value; // Valor constante inteiro da expressão (se for inteiro)
+double float_value; // Valor constante flutuante da expressão (se for flutuante)
+
+bool in_factor_node = false;
+
 void analisa_declaracao_variaveis(Node* var, char* scope);
 void analisa_expressao(Node* expression, char* scope);
 void analisa_corpo(Node* body, char* scope);
@@ -24,10 +35,18 @@ void analisa_lista_argumentos(Node* lista_argumentos, char* scope){
 }
 
 void analisa_numero(Node* numero, char* scope){
-    // TODO
+    if(numero->ch[0]->type == NT_NUM_INTEIRO){
+        expression_type = T_INTEIRO;
+        int_value = atoi(numero->ch[0]->ch[0]->label);
+    }
+    else{
+        expression_type = T_FLUTUANTE;
+        float_value = atof(numero->ch[0]->ch[0]->label);
+    }
 }
 
 void analisa_chamada_funcao(Node* chamada_funcao, char* scope){
+    expression_is_constant = false;
     // Verificando a quantidade de paramaetros da função
     if(!ft_verifica_chamada_para_principal(chamada_funcao->ch[0]->ch[0]->label, scope))
         return;
@@ -35,23 +54,45 @@ void analisa_chamada_funcao(Node* chamada_funcao, char* scope){
     if(func){
         ft_set_funcao_utilizada(chamada_funcao->ch[0]->ch[0]);
         ft_verifica_quantidade_parametros(func, chamada_funcao->ch[2]);
+        expression_type = func->return_type;
     }
     analisa_lista_argumentos(chamada_funcao->ch[2], scope);
 }
 
-void analisa_var(Node* var, char* scope){
+void analisa_indice(Node* indice, char* scope){
+    if(indice->child_count == 4){
+        analisa_indice(indice->ch[0], scope);
+        analisa_expressao(indice->ch[2], scope);
+    }else{
+        analisa_expressao(indice->ch[1], scope);
+    }
+}
+
+bool analisa_var(Node* var, char* scope){
     char* var_name = var->ch[0]->ch[0]->label;
     vt_entry* entry = vt_existe(var_name, scope);
     if(entry == NULL){
         semantic_error = true;
         if(check_key)
-            printf("%s", ERR_SEM_VAR_NOT_DECL.cod);
+            printf("%s\n", ERR_SEM_VAR_NOT_DECL.cod);
         else
             printf("\033[1;31mLinha %d: %s '%s'\033[0m\n", var->ch[0]->line, ERR_SEM_VAR_NOT_DECL.msg, var_name);
+        return false;
     }
+
+    if(in_factor_node){
+        vt_set_used(var_name, scope);
+        expression_is_constant = false;
+        expression_type = entry->type;
+    }
+
+    if(var->child_count == 2)
+        analisa_indice(var->ch[1], scope);
+    return true;
 }
 
 void analisa_fator(Node* fator, char* scope){
+    in_factor_node = true;
     if(fator->child_count == 1){
         Node* child = fator->ch[0];
         switch (child->type){
@@ -73,13 +114,20 @@ void analisa_fator(Node* fator, char* scope){
     }else{
         analisa_expressao(fator->ch[1], scope);
     }
+    in_factor_node = false;
 }
 
 void analisa_expressao_unaria(Node* expression, char* scope){
     if(expression->child_count == 1)
-        analisa_fator(expression->ch[0], scope);
+        analisa_fator(expression->ch[0], scope);    
     else{
         analisa_fator(expression->ch[1], scope);
+
+        // Mudando o sinal do número se preciso
+        if(expression->ch[0]->ch[0]->type == NT_MENOS){
+            if(expression_type == T_INTEIRO) int_value = -int_value;
+            else float_value = -float_value;
+        }
     }
 }
 
@@ -119,14 +167,126 @@ void analisa_expressao_logica(Node* expression, char* scope){
     }
 }
 
+bool expressao_eh_unica_constante(Node* expression){
+    int count = 0;
+    Node* current = expression;
+    while(1){
+        if(count == 7){
+            if(current->type == NT_NUMERO) return true;
+            else return false;
+        }
+        if(current->child_count != 1) return false;
+        count++;
+        current = current->ch[0];
+    }
+}
+
+bool expressao_eh_unica_variavel(Node* expression){
+    int count = 0;
+    Node* current = expression;
+    while(1){
+        if(count == 7){
+            if(current->type == NT_VAR) return true;
+            else return false;
+        }
+        if(current->child_count != 1) return false;
+        count++;
+        current = current->ch[0];
+    }
+}
+
+bool expressao_eh_unica_funcao(Node* expression){
+    int count = 0;
+    Node* current = expression;
+    while(1){
+        if(count == 7){
+            if(current->type == NT_CHAMADA_FUNCAO) return true;
+            else return false;
+        }
+        if(current->child_count != 1) return false;
+        count++;
+        current = current->ch[0];
+    }
+}
+
 void analisa_atribuicao(Node* atribuicao, char* scope){
-    analisa_var(atribuicao->ch[0], scope);
-    analisa_expressao(atribuicao->ch[2], scope);
+    bool variavelExiste = analisa_var(atribuicao->ch[0], scope);
+    if(variavelExiste){
+        vt_entry* entry = vt_existe(atribuicao->ch[0]->ch[0]->ch[0]->label, scope);
+        expected_type = entry->type;
+        analisa_expressao(atribuicao->ch[2], scope);
+
+        if(expressao_eh_unica_variavel(atribuicao->ch[2])){
+            if(expected_type == T_INTEIRO && expression_type == T_FLUTUANTE){
+                if(check_key) printf("%s\n", WAR_SEM_IMP_COERC_OF_VAR.cod);
+                else
+                    printf("\033[1;33mLinha %d: %s %s: '%s' para '%s'\033[0m\n", 
+                    atribuicao->ch[0]->line, WAR_SEM_IMP_COERC_OF_VAR.msg, 
+                    entry->name, "flutuante", "inteiro");
+            }
+            else if(expected_type == T_FLUTUANTE && expression_type == T_INTEIRO){
+                if(check_key) printf("%s\n", WAR_SEM_IMP_COERC_OF_VAR.cod);
+                else 
+                    printf("\033[1;33mLinha %d: %s %s: '%s' para '%s'\033[0m\n", 
+                    atribuicao->ch[0]->line, WAR_SEM_IMP_COERC_OF_VAR.msg, 
+                    entry->name, "inteiro", "flutuante");
+            }
+        }
+        else if (expressao_eh_unica_constante(atribuicao->ch[2])){
+            if(expected_type == T_INTEIRO && expression_type == T_FLUTUANTE){
+                if(check_key) printf("%s\n", WAR_SEM_IMP_COERC_OF_NUM.cod);
+                else
+                    printf("\033[1;33mLinha %d: %s %.2f do tipo flutuante para inteiro\033[0m\n", 
+                    atribuicao->ch[0]->line, WAR_SEM_IMP_COERC_OF_NUM.msg, float_value);
+            }
+            else if(expected_type == T_FLUTUANTE && expression_type == T_INTEIRO){
+                if(check_key) printf("%s\n", WAR_SEM_IMP_COERC_OF_NUM.cod);
+                else 
+                    printf("\033[1;33mLinha %d: %s %d do tipo inteiro para flutuante\033[0m\n", 
+                    atribuicao->ch[0]->line, WAR_SEM_IMP_COERC_OF_NUM.msg, int_value);
+            }
+        }
+        else if (expressao_eh_unica_funcao(atribuicao->ch[2])){
+            if(expression_type == T_FLUTUANTE && expected_type == T_INTEIRO){
+                if(check_key) printf("%s\n", WAR_SEM_IMP_COERC_OF_RET_VAL.cod);
+                else
+                    printf("\033[1;33mLinha %d: %s\033[0m\n", 
+                    atribuicao->ch[0]->line, WAR_SEM_IMP_COERC_OF_RET_VAL.msg);
+            }
+            else if(expression_type == T_INTEIRO && expected_type == T_FLUTUANTE){
+                if(check_key)printf("%s\n", WAR_SEM_IMP_COERC_OF_RET_VAL.cod);
+                else
+                    printf("\033[1;33mLinha %d: %s\033[0m\n", 
+                    atribuicao->ch[0]->line, WAR_SEM_IMP_COERC_OF_RET_VAL.msg);
+            }
+        }
+        else{
+            if(expression_type == T_FLUTUANTE && expected_type == T_INTEIRO){
+                if(check_key) printf("%s\n", WAR_SEM_IMP_COERC_OF_EXP.cod);
+                else
+                    printf("\033[1;33mLinha %d: %s\033[0m\n", 
+                    atribuicao->ch[0]->line, WAR_SEM_IMP_COERC_OF_EXP.msg);
+            }
+            else if(expression_type == T_INTEIRO && expected_type == T_FLUTUANTE){
+                if(check_key)printf("%s\n", WAR_SEM_IMP_COERC_OF_EXP.cod);
+                else
+                    printf("\033[1;33mLinha %d: %s\033[0m\n", 
+                    atribuicao->ch[0]->line, WAR_SEM_IMP_COERC_OF_EXP.msg);
+            }
+        }
+    }else{
+        analisa_expressao(atribuicao->ch[2], scope);
+    }
     vt_set_atribuida(atribuicao->ch[0]->ch[0]->ch[0]->label, scope);
 }
 
 void analisa_retorna(Node* retorna, char* scope){
+    func_has_return = true;
     analisa_expressao(retorna->ch[2], scope);
+    if(expression_type != expected_return_type){
+        if(check_key) printf("%s\n", ERR_SEM_FUNC_RET_TYPE_ERROR.cod);
+        else printf("\033[1;31mLinha %d: %s\033[0m\n", retorna->ch[0]->line, ERR_SEM_FUNC_RET_TYPE_ERROR.msg);
+    }
 }
 
 void analisa_escreva(Node* escreva, char* scope){
@@ -220,11 +380,17 @@ void analisa_declaracao_funcao(Node* func){
         vt_insere_parametro(entry->params[i]->label, entry->params[i]->type, entry->name, entry->line);
     }
 
+    func_has_return = false;
+    expected_return_type = entry->return_type;
     if(func->child_count == 1)
         analisa_corpo(func->ch[0]->ch[4], entry->name);
     else
         analisa_corpo(func->ch[1]->ch[4], entry->name);
 
+    if(expected_return_type != T_VAZIO && !func_has_return){
+        if(check_key) printf("%s\n", ERR_SEM_FUNC_RET_TYPE_ERROR.cod);
+        else printf("\033[1;31mLinha %d: %s %s\033[0m\n", func->ch[0]->line, ERR_SEM_FUNC_RET_TYPE_ERROR.msg, entry->name);
+    }
 }
 
 void analisa_inicializacao_variaveis(Node* var_init, char* scope){
