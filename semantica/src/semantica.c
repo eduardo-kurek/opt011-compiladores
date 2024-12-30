@@ -83,16 +83,17 @@ void analisa_indice(Node* indice, char* scope, vt_entry* entry, int dim){
     }
 }
 
-bool analisa_var(Node* var, char* scope){
+vt_entry* analisa_var(Node* var, char* scope){
     char* var_name = var->ch[0]->ch[0]->label;
     vt_entry* entry = vt_existe(var_name, scope);
+    if(entry == NULL) entry = vt_existe(var_name, "global");
     if(entry == NULL){
         semantic_error = true;
         if(check_key)
             printf("%s\n", ERR_SEM_VAR_NOT_DECL.cod);
         else
             printf("\033[1;31mLinha %d: %s '%s'\033[0m\n", var->ch[0]->line, ERR_SEM_VAR_NOT_DECL.msg, var_name);
-        return false;
+        return NULL;
     }
 
     if(in_factor_node){
@@ -103,7 +104,7 @@ bool analisa_var(Node* var, char* scope){
 
     if(var->child_count == 2)
         analisa_indice(var->ch[1], scope, entry, (int)entry->dim);
-    return true;
+    return entry;
 }
 
 void analisa_fator(Node* fator, char* scope){
@@ -226,9 +227,8 @@ bool expressao_eh_unica_funcao(Node* expression){
 }
 
 void analisa_atribuicao(Node* atribuicao, char* scope){
-    bool variavelExiste = analisa_var(atribuicao->ch[0], scope);
-    if(variavelExiste){
-        vt_entry* entry = vt_existe(atribuicao->ch[0]->ch[0]->ch[0]->label, scope);
+    vt_entry* entry = analisa_var(atribuicao->ch[0], scope);
+    if(entry){
         expected_type = entry->type;
         analisa_expressao(atribuicao->ch[2], scope);
 
@@ -460,6 +460,7 @@ void analise_semantica(Node* node){
     ft_verifica_declarada_nao_chamada();
     vt_verifica_nao_inicializada();
     vt_verifica_nao_utilizada();
+    vt_verifica_inicializada_nao_utilizada();
 
     //ft_imprime();
     //vt_imprime();

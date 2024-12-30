@@ -9,4 +9,4 @@ Para compilar o parser, é necessário ter as ferramentas abaixo instaladas:
 * bison;
 
 # Compilação
-Para compilar, entre na pasta src e execute o comando `make`. O parser será gerado na raiz do projeto. Para utilizar, use o comando `./parser file.tpp [-k]`.
+Para compilar, execute o comando `make`. O parser será gerado na raiz do projeto. Para utilizar, use o comando `./parser file.tpp [-k]`.

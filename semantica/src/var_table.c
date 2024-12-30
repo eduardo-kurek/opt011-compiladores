@@ -229,7 +229,7 @@ void vt_set_used(char* name, char* scope){
     while(current != NULL){
         if(strcmp(current->name, name) == 0 && strcmp(current->scope, "global") == 0){
             current->used = true;
-            return;
+            break;
         }
         current = current->next;
     }
@@ -238,8 +238,6 @@ void vt_set_used(char* name, char* scope){
 vt_entry* vt_existe(char *name, char *scope){
     vt_entry* current = vt->first;
     while(current != NULL){
-        if(strcmp(current->name, name) == 0 && strcmp(current->scope, "global") == 0)
-            return current;
         if(strcmp(current->name, name) == 0 && strcmp(current->scope, scope) == 0)
             return current;
         current = current->next;
@@ -310,11 +308,11 @@ void vt_verifica_nao_inicializada(){
 
     current = vt->first;
     while(current != NULL){
-        if(!current->initialized){
+        if(!current->initialized && current->used){
             if(check_key)
                 printf("%s\n", WAR_SEM_VAR_DECL_NOT_INIT.cod);
             else
-                printf("\033[1;33mLinha %d: %s '%s'\033[0m\n", current->line, WAR_SEM_VAR_DECL_NOT_INIT.msg, current->name);
+                printf("\033[1;33mLinha %d: %s '%s':'%s'\033[0m\n", current->line, WAR_SEM_VAR_DECL_NOT_INIT.msg, current->name, current->scope);
         }
         current = current->next;
     }
@@ -348,11 +346,49 @@ void vt_verifica_nao_utilizada(){
 
     current = vt->first;
     while(current != NULL){
-        if(!current->used){
+        if(!current->initialized && !current->used){
             if(check_key)
                 printf("%s\n", WAR_SEM_VAR_DECL_NOT_USED.cod);
             else
-                printf("\033[1;33mLinha %d: %s '%s'\033[0m\n", current->line, WAR_SEM_VAR_DECL_NOT_USED.msg, current->name);
+                printf("\033[1;33mLinha %d: %s '%s':'%s'\033[0m\n", current->line, WAR_SEM_VAR_DECL_NOT_USED.msg, current->name, current->scope);
+        }
+        current = current->next;
+    }
+
+    // Inverte a lista novamente, para o original
+    current = vt->first;
+    prev = NULL;
+    next = NULL;
+    while(current != NULL){
+        next = current->next;
+        current->next = prev;
+        prev = current;
+        current = next;
+    }
+    vt->first = prev;
+}
+
+void vt_verifica_inicializada_nao_utilizada(){
+    vt_entry* current = vt->first;
+    vt_entry* prev = NULL;
+    vt_entry* next = NULL;
+
+    // Inverte a lista
+    while(current != NULL){
+        next = current->next;
+        current->next = prev;
+        prev = current;
+        current = next;
+    }
+    vt->first = prev;
+
+    current = vt->first;
+    while(current != NULL){
+        if(current->initialized && !current->used){
+            if(check_key)
+                printf("%s\n", WAR_SEM_VAR_DECL_INIT_NOT_USED.cod);
+            else
+                printf("\033[1;33mLinha %d: %s '%s':'%s'\033[0m\n", current->line, WAR_SEM_VAR_DECL_INIT_NOT_USED.msg, current->name, current->scope);
         }
         current = current->next;
     }

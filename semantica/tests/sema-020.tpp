@@ -59,20 +59,26 @@ fim
 {WARNING: ID a está recebendo valores incompatíveis: inteiro -> flutuante}
 {WARNING: ID b está recebendo valores incompatíveis: flutuante -> inteiro}
 
-{RESULTADO DA TABELA DE SIMBOLOS CORRETA!}
+{
 
-{'fatorial': ['funcao', 'inteiro', ['inteiro', 'flutuante']],}
-{'fatorial.m': ['variável', 'flutuante', 0, True],}
-{'fatorial.n': ['variável', 'inteiro', 0, True],}
-{'fatorial.p': ['variável', 'flutuante', 0, False],}
-{'fatorial2': ['funcao', 'inteiro', ['inteiro', 'flutuante', 'inteiro']],}
-{'fatorial2.fat': ['variável', 'inteiro', 0, True],}
-{'fatorial2.fat2': ['variável', 'flutuante', 0, True],}
-{'fatorial2.fat3': ['variável', 'inteiro', 0, True],}
-{'global.a': ['variável', 'inteiro', 0, True],}
-{'global.b': ['variável', 'flutuante', 0, True],}
-{'global.n': ['variável', 'inteiro', 0, True],}
-{'global.x': ['variável', 'flutuante', 0, False],}
-{'global.y': ['variável', 'flutuante', 0, False],}
-{'global.z': ['variável', 'flutuante', 0, True],}
-{'principal': ['funcao', 'inteiro', []]}
+Linha 7: Atribuição de tipos diferentes. Número. 5 do tipo inteiro para flutuante
+Linha 18: Atribuição de tipos diferentes. Expressão.
+Linha 21: Função com tipo de retorno diferente do esperado.
+Linha 24: Função com tipo de retorno diferente do esperado. principal
+Linha 46: Atribuição de tipos diferentes. Coerção implícita de valor de retorno.
+Linha 34: Função com tipo de retorno diferente do esperado. fatorial2
+Linha 34: Função declarada e não utilizada. fatorial2
+Linha 2: Variável declarada e não inicializada. 'y'
+Linha 2: Variável declarada e não inicializada. 'x'
+Linha 13: Variável declarada e não inicializada. 'p'
+Linha 1: Variável declarada e não utilizada. 'n'
+Linha 2: Variável declarada e não utilizada. 'y'
+Linha 2: Variável declarada e não utilizada. 'x'
+Linha 13: Variável declarada e não utilizada. 'p'
+Linha 31: Variável declarada e não utilizada. 'a'
+Linha 32: Variável declarada e não utilizada. 'b'
+Linha 34: Variável declarada e não utilizada. 'fat'
+Linha 34: Variável declarada e não utilizada. 'fat2'
+Linha 34: Variável declarada e não utilizada. 'fat3'
+
+}

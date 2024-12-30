@@ -38,7 +38,8 @@ vt_entry* vt_existe(char* name, char* scope);
 void vt_imprime();
 void vt_destroy();
 
-void vt_verifica_nao_inicializada();
 void vt_verifica_nao_utilizada();
+void vt_verifica_inicializada_nao_utilizada();
+void vt_verifica_nao_inicializada();
 
 #endif

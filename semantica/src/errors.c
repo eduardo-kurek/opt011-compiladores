@@ -34,7 +34,8 @@ Error WAR_SEM_CALL_REC_FUNC_MAIN = {"WAR-SEM-CALL-REC-FUNC-MAIN", "Chamada recur
 
 Error ERR_SEM_VAR_NOT_DECL = {"ERR-SEM-VAR-NOT-DECL", "Variável não declarada.", 'E'};
 Error WAR_SEM_VAR_DECL_NOT_INIT = {"WAR-SEM-VAR-DECL-NOT-INIT", "Variável declarada e não inicializada.", 'W'};
-Error WAR_SEM_VAR_DECL_NOT_USED = {"WAR-SEM-VAR-DECL-NOT-USED", "Variável declarada e não utilizada.", 'W'}; 
+Error WAR_SEM_VAR_DECL_NOT_USED = {"WAR-SEM-VAR-DECL-NOT-USED", "Variável declarada e não utilizada.", 'W'};
+Error WAR_SEM_VAR_DECL_INIT_NOT_USED = {"WAR-SEM-VAR-DECL-INIT-NOT-USED", "Variável declarada e inicializada, mas não utilizada.", 'W'}; 
 Error WAR_SEM_VAR_DECL_PREV = {"WAR-SEM-VAR-DECL-PREV", "Variável já declarada.", 'W'};
 
 Error WAR_SEM_IMP_COERC_OF_VAR = {"WAR-SEM-IMP-COERC-OF-VAR", "Atribuição de tipos diferentes. Variável.", 'W'};

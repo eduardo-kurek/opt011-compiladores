@@ -42,6 +42,7 @@ extern Error WAR_SEM_CALL_REC_FUNC_MAIN;
 extern Error ERR_SEM_VAR_NOT_DECL;
 extern Error WAR_SEM_VAR_DECL_NOT_INIT;
 extern Error WAR_SEM_VAR_DECL_NOT_USED;
+extern Error WAR_SEM_VAR_DECL_INIT_NOT_USED;
 extern Error WAR_SEM_VAR_DECL_PREV;
 
 extern Error WAR_SEM_IMP_COERC_OF_VAR;

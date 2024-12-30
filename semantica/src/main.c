@@ -40,18 +40,17 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    my_yyerror(&WAR_SYN_GEN_SYNTAX_TREE);
-    my_yyerror(&WAR_SYN_ANA_SUCCESS);
+    // my_yyerror(&WAR_SYN_GEN_SYNTAX_TREE);
+    // my_yyerror(&WAR_SYN_ANA_SUCCESS);
     node_to_dot(syntax_tree, "tree.dot");
-    my_yyerror(&WAR_SYN_OUTPUT_FILE);
+    // my_yyerror(&WAR_SYN_OUTPUT_FILE);
     
     if(!success) return 2;
 
-    printf("Passando para a analise semantica\n");
     analise_semantica(syntax_tree);
 
     if(semantic_error){
-        printf("Erro semantico encontrado\n");
+        //printf("Erro semantico encontrado\n");
         return 3;
     }
 
