@@ -59,12 +59,27 @@ void analisa_chamada_funcao(Node* chamada_funcao, char* scope){
     analisa_lista_argumentos(chamada_funcao->ch[2], scope);
 }
 
-void analisa_indice(Node* indice, char* scope){
+void analisa_indice(Node* indice, char* scope, vt_entry* entry, int dim){
+    if(dim == 0) return;
     if(indice->child_count == 4){
-        analisa_indice(indice->ch[0], scope);
+        analisa_indice(indice->ch[0], scope, entry, dim-1);
         analisa_expressao(indice->ch[2], scope);
     }else{
         analisa_expressao(indice->ch[1], scope);
+    }
+
+    if(expression_type == T_FLUTUANTE){
+        if(check_key) printf("%s\n", ERR_SEM_ARRAY_INDEX_NOT_INT.cod);
+        else
+            printf("\033[1;31mLinha %d: %s\033[0m\n", indice->ch[0]->line, ERR_SEM_ARRAY_INDEX_NOT_INT.msg);
+    }
+    else{
+        int dimSize = dim == 1 ? entry->dim_1_size : entry->dim_2_size;
+        if(int_value < 0 || int_value >= dimSize){
+            if(check_key) printf("%s\n", ERR_SEM_INDEX_OUT_OF_RANGE.cod);
+            else
+                printf("\033[1;31mLinha %d: %s\033[0m\n", indice->ch[0]->line, ERR_SEM_INDEX_OUT_OF_RANGE.msg);
+        }
     }
 }
 
@@ -87,7 +102,7 @@ bool analisa_var(Node* var, char* scope){
     }
 
     if(var->child_count == 2)
-        analisa_indice(var->ch[1], scope);
+        analisa_indice(var->ch[1], scope, entry, (int)entry->dim);
     return true;
 }
 
@@ -124,7 +139,8 @@ void analisa_expressao_unaria(Node* expression, char* scope){
         analisa_fator(expression->ch[1], scope);
 
         // Mudando o sinal do número se preciso
-        if(expression->ch[0]->ch[0]->type == NT_MENOS){
+        if(expression->ch[0]->type == NT_MENOS){
+            printf("Mudando sinal do numero\n");
             if(expression_type == T_INTEIRO) int_value = -int_value;
             else float_value = -float_value;
         }

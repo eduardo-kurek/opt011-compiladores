@@ -42,5 +42,5 @@ Error WAR_SEM_IMP_COERC_OF_NUM = {"WAR-SEM-IMP-COERC-OF-NUM", "Atribuição de t
 Error WAR_SEM_IMP_COERC_OF_EXP = {"WAR-SEM-IMP-COERC-OF-EXP", "Atribuição de tipos diferentes. Expressão.", 'W'};
 Error WAR_SEM_IMP_COERC_OF_RET_VAL = {"WAR-SEM-IMP-COERC-OF-RET-VAL", "Atribuição de tipos diferentes. Coerção implícita de valor de retorno.", 'W'};
 
-Error ERR_SEM_ARRAY_INDEX_NOT_INT = {"ERR-SEM-ARRAY-INDEX-NOT-INT", "Índice de array não é inteiro.", 'E'};  // TODO
-Error ERR_SEM_INDEX_OUT_OF_RANGE = {"ERR-SEM-INDEX-OUT-OF-RANGE", "Índice fora do intervalo.", 'E'};  // TODO
+Error ERR_SEM_ARRAY_INDEX_NOT_INT = {"ERR-SEM-ARRAY-INDEX-NOT-INT", "Índice de array não é inteiro.", 'E'};
+Error ERR_SEM_INDEX_OUT_OF_RANGE = {"ERR-SEM-INDEX-OUT-OF-RANGE", "Índice fora do intervalo.", 'E'};

@@ -26,6 +26,19 @@ void vt_set_entry_dimension(Node* var_node, vt_entry* entry){
 
     if(var_node->ch[1]->child_count == 3){
         entry->dim = VECTOR;
+        if(var_node->ch[1]->ch[1]->ch[0]->
+            ch[0]->ch[0]->ch[0]->ch[0]->
+            ch[0]->ch[0]->ch[0]->type == NT_NUM_PONTO_FLUTUANTE)
+        {
+            if(check_key)
+                printf("%s\n", ERR_SEM_ARRAY_INDEX_NOT_INT.cod);
+            else
+                printf("\033[1;31mLinha %d: %s\033[0m\n", var_node->ch[1]->ch[1]->ch[0]->line, ERR_SEM_ARRAY_INDEX_NOT_INT.msg);
+            semantic_error = true;
+            entry->dim_1_size = -1;
+            entry->dim_2_size = -1;
+            return;
+        }
         entry->dim_1_size = atoi(
             var_node->ch[1]->ch[1]->ch[0]->
             ch[0]->ch[0]->ch[0]->ch[0]->
