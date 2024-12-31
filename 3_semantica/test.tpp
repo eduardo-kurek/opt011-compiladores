@@ -31,8 +31,16 @@ fim
 	retorna(a)
 fim}
 
+inteiro: var
+
+var := 10
+
+inteiro func(inteiro: a, inteiro: b)
+	retorna(a + b)
+fim
+
 principal(inteiro: a, flutuante: b)
-	inteiro: x[2 + 3][x], y, z
+	inteiro: x[2 + 3][x], y, z, w[(23 + a) - 15 / 2]
 	se (x > 0 + 2 * 1) && (x < 10 || x > 10) então
 		retorna(1)
 	fim

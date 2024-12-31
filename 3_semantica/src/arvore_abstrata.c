@@ -2,6 +2,7 @@
 #include "types.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 void podar_lista_argumentos(Node* node);
 void podar_chamada_funcao(Node* node);
@@ -20,7 +21,7 @@ Node* podar_expressao(Node* node);
 Node* podar_retorna(Node* node);
 void podar_escreva(Node* node);
 void podar_leia(Node* node);
-void podar_atribuicao(Node* node);
+Node* podar_atribuicao(Node* node);
 void podar_repita(Node* node);
 Node* podar_se(Node* node);
 Node* podar_acao(Node* node);
@@ -33,10 +34,10 @@ Node* podar_indice(Node* node);
 Node* podar_var(Node* node);
 Node* podar_id(Node* node);
 Node* podar_lista_variaveis(Node* node);
-void podar_declaracao_funcao(Node* node);
-void podar_inicializacao_variaveis(Node* node);
+Node* podar_declaracao_funcao(Node* node);
+Node* podar_inicializacao_variaveis(Node* node);
 Node* podar_declaracao_variaveis(Node* node);
-void podar_declaracao(Node* node);
+Node* podar_declaracao(Node* node);
 void podar_lista_declaracoes(Node* node);
 void podar_programa(Node* node);
 
@@ -188,9 +189,11 @@ void podar_leia(Node* node){
     node->ch[2] = podar_var(node->ch[2]);
 }
 
-void podar_atribuicao(Node* node){
+Node* podar_atribuicao(Node* node){
     node->ch[0] = podar_var(node->ch[0]);
     node->ch[2] = podar_expressao(node->ch[2]);
+    strcpy(node->label, node->ch[1]->ch[0]->label);
+    return node_create_add_children_and_destroy(node, node, 2, (int[]){0, 2});
 }
 
 void podar_repita(Node* node){
@@ -349,7 +352,7 @@ Node* podar_lista_variaveis(Node* node){
     }
 }
 
-void podar_declaracao_funcao(Node* node){
+Node* podar_declaracao_funcao(Node* node){
     if(node->child_count == 2){
         node->ch[0] = podar_tipo(node->ch[0]);
         node->ch[1] = podar_cabecalho(node->ch[1]);
@@ -357,10 +360,12 @@ void podar_declaracao_funcao(Node* node){
     else{
         node->ch[0] = podar_cabecalho(node->ch[0]);
     }
+    return node;
 }
 
-void podar_inicializacao_variaveis(Node* node){
-    podar_atribuicao(node->ch[0]);
+Node* podar_inicializacao_variaveis(Node* node){
+    node->ch[0] = podar_atribuicao(node->ch[0]);
+    return node;
 }
 
 Node* podar_declaracao_variaveis(Node* node){
@@ -369,23 +374,24 @@ Node* podar_declaracao_variaveis(Node* node){
     return node_create_add_children_and_destroy(node, node, 2, (int[]){0, 2});
 }
 
-void podar_declaracao(Node* node){
+Node* podar_declaracao(Node* node){
     switch (node->ch[0]->type){
         case NT_DECLARACAO_VARIAVEIS:
             node->ch[0] = podar_declaracao_variaveis(node->ch[0]);
             break;
         
         case NT_INICIALIZACAO_VARIAVEIS:
-            podar_inicializacao_variaveis(node->ch[0]);
+            node->ch[0] = podar_inicializacao_variaveis(node->ch[0]);
             break;
 
         case NT_DECLARACAO_FUNCAO:
-            podar_declaracao_funcao(node->ch[0]);
+            node->ch[0] = podar_declaracao_funcao(node->ch[0]);
             break;
         
         default:
             break;
     }
+    return node;
 }
 
 void podar_lista_declaracoes(Node* node){
