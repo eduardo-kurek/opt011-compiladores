@@ -5,6 +5,7 @@
 #include "semantica.h"
 #include "func_table.h"
 #include "var_table.h"
+#include "arvore_abstrata.h"
 
 extern bool check_key;
 extern bool semantic_error;
@@ -141,7 +142,6 @@ void analisa_expressao_unaria(Node* expression, char* scope){
 
         // Mudando o sinal do número se preciso
         if(expression->ch[0]->type == NT_MENOS){
-            printf("Mudando sinal do numero\n");
             if(expression_type == T_INTEIRO) int_value = -int_value;
             else float_value = -float_value;
         }
@@ -462,8 +462,7 @@ void analise_semantica(Node* node){
     vt_verifica_nao_utilizada();
     vt_verifica_inicializada_nao_utilizada();
 
-    //ft_imprime();
-    //vt_imprime();
+    podar_programa(node);
 
     vt_destroy();
     ft_destroy();

@@ -42,12 +42,12 @@ int main(int argc, char* argv[]) {
 
     // my_yyerror(&WAR_SYN_GEN_SYNTAX_TREE);
     // my_yyerror(&WAR_SYN_ANA_SUCCESS);
-    node_to_dot(syntax_tree, "tree.dot");
     // my_yyerror(&WAR_SYN_OUTPUT_FILE);
     
     if(!success) return 2;
 
     analise_semantica(syntax_tree);
+    node_to_dot(syntax_tree, "tree.dot");
 
     if(semantic_error){
         //printf("Erro semantico encontrado\n");

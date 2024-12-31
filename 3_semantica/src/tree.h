@@ -37,6 +37,31 @@ Node* node_create_leaf(const char* parentLabel, node_type parentType,
      const char* childLabel, node_type childType);
 void node_add_child(Node* parent, Node* child);
 void node_add_children(Node* parent, int num_children, ...);
+void node_destroy(Node* node);
+
+// Cria um novo node e destrói o node passado como argumento
+Node* node_create_and_destroy(const char* label, node_type type, Node* destroy);
+
+Node* node_create_add_children_and_destroy(Node* node, Node* destroy, int n_children, int* children);
+
+/**
+ * Clona 'node', adiciona os filhos selecionados de 'node' ao novo clone, 
+ * destroi 'destroy' e retorna o clone.
+ */
+Node* node_clone_add_children_and_destroy(Node* node, Node* destroy, int n_children, int* children);
+
+// Sobe o 'i' filho para o lugar do pai
+Node* node_raise_child(Node* node, int i);
+
+/**
+ * Clona o node e sobe a label do i-ésimo filho para o lugar do pai
+ * o tipo do node é mantido
+ */
+Node* node_clone_and_raise_child(Node* node, int i);
+
+// Retorna uma cópia identica do node
+Node* node_clone(Node* node);
+
 Node* node_add_new_child(Node* parent, const char* label);
 void node_to_dot(Node* root, const char* filename);
 void node_print(Node* node);

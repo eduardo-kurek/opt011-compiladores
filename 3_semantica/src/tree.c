@@ -79,7 +79,7 @@ Node* node_add_new_child(Node* parent, const char* label){
 void generate_dot(Node* node, FILE* file){
     if(node == NULL) return;
 
-    fprintf(file, "\t%d [label=\"%s\"];\n", node->id, node->label);
+    fprintf(file, "\t%d [label=\"%s (%s)\"];\n", node->id, node->label, node_type_strings[node->type]);
     for(int i = 0; i < node->child_count; i++){
         fprintf(file, "\t%d -> %d;\n", node->id, node->ch[i]->id);
         generate_dot(node->ch[i], file);
@@ -117,6 +117,63 @@ Node* node_create_leaf(const char *parentLabel, node_type parentType,
     Node* child = node_create(childLabel, childType);
     node_add_child(parent, child);
     return parent;
+}
+
+void node_destroy(Node *node){
+    for(int i = 0; i < node->child_count; i++)
+        node_destroy(node->ch[i]);
+    free(node->ch);
+    free(node);
+}
+
+Node* node_create_and_destroy(const char* label, node_type type, Node *destroy){
+    Node* node = node_create(label, type);
+    node_destroy(destroy);
+    return node;
+}
+
+Node* node_create_add_children_and_destroy(Node* node, Node* destroy, int n_children, int* children){
+    Node* new = node_create(node->label, node->type);
+    for(int i = 0; i < n_children; i++)
+        node_add_child(new, node_clone(node->ch[children[i]]));
+    node_destroy(destroy);
+    return new;
+}
+
+Node* node_clone_and_destroy(Node* node, Node* destroy){
+    Node* clone = node_clone(node);
+    node_destroy(destroy);
+    return clone;
+}
+
+Node* node_clone_add_children_and_destroy(Node* node, Node* destroy, int n_children, int* children){
+    Node* clone = node_clone(node);
+    for(int i = 0; i < n_children; i++)
+        node_add_new_child(clone, node->ch[children[i]]->label);
+    node_destroy(destroy);
+    return clone;
+}
+
+Node* node_raise_child(Node* node, int i){
+    Node* new = node_clone(node->ch[i]);
+    node_destroy(node);
+    return new;
+}
+
+Node* node_clone_and_raise_child(Node* node, int i){
+    Node* clone = node_create(node->ch[i]->label, node->type);
+    for(int j = 0; j < node->child_count; j++)
+        if(j != i)
+            node_add_child(clone, node_clone(node->ch[j]));
+    node_destroy(node);
+    return clone;
+}
+
+Node* node_clone(Node* node){
+    Node* clone = node_create(node->label, node->type);
+    for(int i = 0; i < node->child_count; i++)
+        node_add_child(clone, node_clone(node->ch[i]));
+    return clone;
 }
 
 const char* node_type_to_string(Node* node){
