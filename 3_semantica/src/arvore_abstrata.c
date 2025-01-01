@@ -4,8 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-void podar_lista_argumentos(Node* node);
-void podar_chamada_funcao(Node* node);
+Node* podar_lista_argumentos(Node* node);
+Node* podar_chamada_funcao(Node* node);
 Node* podar_numero(Node* node);
 Node* podar_operador_logico(Node* node);
 Node* podar_operador_relacional(Node* node);
@@ -22,7 +22,7 @@ Node* podar_retorna(Node* node);
 void podar_escreva(Node* node);
 void podar_leia(Node* node);
 Node* podar_atribuicao(Node* node);
-void podar_repita(Node* node);
+Node* podar_repita(Node* node);
 Node* podar_se(Node* node);
 Node* podar_acao(Node* node);
 Node* podar_corpo(Node* node);
@@ -38,21 +38,25 @@ Node* podar_declaracao_funcao(Node* node);
 Node* podar_inicializacao_variaveis(Node* node);
 Node* podar_declaracao_variaveis(Node* node);
 Node* podar_declaracao(Node* node);
-void podar_lista_declaracoes(Node* node);
+Node* podar_lista_declaracoes(Node* node);
 void podar_programa(Node* node);
 
-void podar_lista_argumentos(Node* node){
+Node* podar_lista_argumentos(Node* node){
     if(node->child_count == 3){
-        podar_lista_argumentos(node->ch[0]);
+        node->ch[0] = podar_lista_argumentos(node->ch[0]);
         node->ch[2] = podar_expressao(node->ch[2]);
+        return node_create_add_children_and_destroy(node, node, 2, (int[]){0, 2});
     }
     else if(node->ch[0]->type == NT_EXPRESSAO){
         node->ch[0] = podar_expressao(node->ch[0]);
+        return node;
     }
 }
 
-void podar_chamada_funcao(Node* node){
-    podar_lista_argumentos(node->ch[2]);
+Node* podar_chamada_funcao(Node* node){
+    node->ch[0] = podar_id(node->ch[0]);
+    node->ch[2] = podar_lista_argumentos(node->ch[2]);
+    return node_create_add_children_and_destroy(node, node, 2, (int[]){0, 2});
 }
 
 Node* podar_numero(Node* node){
@@ -77,7 +81,8 @@ Node* podar_fator(Node* node){
             break;
 
         case NT_CHAMADA_FUNCAO:
-            podar_chamada_funcao(node->ch[0]);
+            node->ch[0] = podar_chamada_funcao(node->ch[0]);
+            return node_raise_child(node, 0);
             break;
 
         case NT_NUMERO:
@@ -87,8 +92,6 @@ Node* podar_fator(Node* node){
         default:
             break;
     }
-
-    return node;
 }
 
 Node* podar_expressao_unaria(Node* node){
@@ -196,9 +199,10 @@ Node* podar_atribuicao(Node* node){
     return node_create_add_children_and_destroy(node, node, 2, (int[]){0, 2});
 }
 
-void podar_repita(Node* node){
+Node* podar_repita(Node* node){
     node->ch[1] = podar_corpo(node->ch[1]);
     node->ch[3] = podar_expressao(node->ch[3]);
+    return node_create_add_children_and_destroy(node, node, 2, (int[]){1, 3});
 }
 
 Node* podar_se(Node* node){
@@ -233,7 +237,7 @@ Node* podar_acao(Node* node){
             break;
         
         case NT_REPITA: 
-            podar_repita(node->ch[0]);
+            node->ch[0] = podar_repita(node->ch[0]);
             break;
         
         case NT_LEIA:
@@ -394,15 +398,20 @@ Node* podar_declaracao(Node* node){
     return node;
 }
 
-void podar_lista_declaracoes(Node* node){
-    if(node->child_count == 1)
-        podar_declaracao(node->ch[0]);
-    else{
-        podar_lista_declaracoes(node->ch[0]);
-        podar_declaracao(node->ch[1]);
+Node* podar_lista_declaracoes(Node* node){
+    if(node->child_count == 1){
+        node->ch[0] = podar_declaracao(node->ch[0]);
+        return node_raise_child(node, 0);
+    }else{
+        node->ch[0] = podar_lista_declaracoes(node->ch[0]);
+        node->ch[1] = podar_declaracao(node->ch[1]);
+        Node* new = node_create(node->ch[1]->label, node->ch[1]->type);
+        node_add_children(new, 2, node_clone(node->ch[0]), node_clone(node->ch[1]->ch[0]));
+        node_destroy(node);
+        return new;
     }
 }
 
 void podar_programa(Node* node){
-    podar_lista_declaracoes(node->ch[0]);
+    node->ch[0] = podar_lista_declaracoes(node->ch[0]);
 }

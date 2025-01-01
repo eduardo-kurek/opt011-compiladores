@@ -79,7 +79,7 @@ Node* node_add_new_child(Node* parent, const char* label){
 void generate_dot(Node* node, FILE* file){
     if(node == NULL) return;
 
-    fprintf(file, "\t%d [label=\"%s (%s)\"];\n", node->id, node->label, node_type_strings[node->type]);
+    fprintf(file, "\t%d [label=\"%s\"];\n", node->id, node->label);
     for(int i = 0; i < node->child_count; i++){
         fprintf(file, "\t%d -> %d;\n", node->id, node->ch[i]->id);
         generate_dot(node->ch[i], file);
