@@ -47,6 +47,8 @@ principal(inteiro: a, flutuante: b)
 	fim
 
 	repita
+		escreva(a+1)
+		leia(z)
 		z := z + 1
 	até (z < 10 || z > 10 + 1 && (x:=1) > func(a+1, b/x[9][49]))
 fim

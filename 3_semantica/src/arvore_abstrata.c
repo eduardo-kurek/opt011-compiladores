@@ -19,8 +19,8 @@ Node* podar_expressao_simples(Node* node);
 Node* podar_expressao_logica(Node* node);
 Node* podar_expressao(Node* node);
 Node* podar_retorna(Node* node);
-void podar_escreva(Node* node);
-void podar_leia(Node* node);
+Node* podar_escreva(Node* node);
+Node* podar_leia(Node* node);
 Node* podar_atribuicao(Node* node);
 Node* podar_repita(Node* node);
 Node* podar_se(Node* node);
@@ -184,12 +184,14 @@ Node* podar_retorna(Node* node){
     return new;
 }
 
-void podar_escreva(Node* node){
+Node* podar_escreva(Node* node){
     node->ch[2] = podar_expressao(node->ch[2]);
+    return node_create_add_children_and_destroy(node, node, 1, (int[]){2});
 }
 
-void podar_leia(Node* node){
+Node* podar_leia(Node* node){
     node->ch[2] = podar_var(node->ch[2]);
+    return node_create_add_children_and_destroy(node, node, 1, (int[]){2});
 }
 
 Node* podar_atribuicao(Node* node){
@@ -241,11 +243,11 @@ Node* podar_acao(Node* node){
             break;
         
         case NT_LEIA:
-            podar_leia(node->ch[0]);
+            node->ch[0] = podar_leia(node->ch[0]);
             break;
 
         case NT_ESCREVA:
-            podar_escreva(node->ch[0]);
+            node->ch[0] = podar_escreva(node->ch[0]);
             break;
             
         case NT_RETORNA:
