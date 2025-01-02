@@ -179,9 +179,7 @@ Node* podar_expressao(Node* node){
 
 Node* podar_retorna(Node* node){
     node->ch[2] = podar_expressao(node->ch[2]);
-    Node* new = node_clone_add_children_and_destroy(node->ch[2], node, 0, NULL);
-    new->type = NT_RETORNA;
-    return new;
+    return node_create_add_children_and_destroy(node, node, 1, (int[]){2});
 }
 
 Node* podar_escreva(Node* node){
