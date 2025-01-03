@@ -181,12 +181,22 @@ Value expressao_simples(Node* node, Type expectedType){
     return LLVMBuildFCmp(builder, pred, PROCESSA_NODE_EXPECTED(left, LLVMFloatType()), PROCESSA_NODE_EXPECTED(right, LLVMFloatType()), "cmptmp");
 }
 
+Value expressao_logica(Node* node, Type expectedType){
+    Node* left = node->ch[0], *right = node->ch[1];
+    if(strcmp(node->label, "&&") == 0)
+        return LLVMBuildAnd(builder, PROCESSA_NODE_EXPECTED(left, NULL), PROCESSA_NODE_EXPECTED(right, NULL), "andtmp");
+    else if(strcmp(node->label, "||") == 0)
+        return LLVMBuildOr(builder, PROCESSA_NODE_EXPECTED(left, NULL), PROCESSA_NODE_EXPECTED(right, NULL), "ortmp");
+    return NULL;
+}
+
 Value processa_node(Node* node, Type expectedType){
     switch (node->type){
         case NT_RETORNA: return gerar_retorna(node, expectedType);
         case NT_EXPRESSAO_ADITIVA: return expressao_aditiva(node, expectedType);
         case NT_EXPRESSAO_MULTIPLICATIVA: return expressao_multiplicativa(node, expectedType);
         case NT_EXPRESSAO_SIMPLES: return expressao_simples(node, expectedType);
+        case NT_EXPRESSAO_LOGICA: return expressao_logica(node, expectedType);
         case NT_DECLARACAO_VARIAVEIS: return declaracao_variaveis(node);
         case NT_ATRIBUICAO: return atribuicao(node);
         case NT_NUM_INTEIRO: return num(node, expectedType);

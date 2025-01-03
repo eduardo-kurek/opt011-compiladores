@@ -2,7 +2,7 @@ inteiro principal()
 	flutuante: a, b
 	a := 5.5
 	b := a + 2
-	se a >= b && (1 = 0) então
+	se a < b || (1 = 1) então
 		retorna(a)
 	fim
 	retorna(a * b)
