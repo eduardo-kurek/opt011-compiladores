@@ -94,7 +94,6 @@ Value lista_variaveis(Node* node, Type type){
 
 Value declaracao_variaveis(Node* node){
     Type type = tipo(node->ch[0]->type);
-    printf("tipo da variavael é: ");
     return lista_variaveis(node->ch[1], type);
 }
 
@@ -105,15 +104,17 @@ Value expressao_multiplicativa(Node* node, Type expectedType){
         result = LLVMBuildFMul(builder, PROCESSA_NODE_EXPECTED(left, LLVMFloatType()), PROCESSA_NODE_EXPECTED(right, LLVMFloatType()), "multmp");
     else
         result = LLVMBuildFDiv(builder, PROCESSA_NODE_EXPECTED(left, LLVMFloatType()), PROCESSA_NODE_EXPECTED(right, LLVMFloatType()), "divtmp");
-    return LLVMBuildFPToSI(builder, result, expectedType, "convtmp"); // converte para o tipo esperado
+    return LLVMBuildFPToSI(builder, result, expectedType, "convtmp");
 }
 
 Value expressao_aditiva(Node* node, Type expectedType){
     Node* left = node->ch[0], *right = node->ch[1];
+    Value result;
     if(strcmp(node->label, "+") == 0)
-        return LLVMBuildAdd(builder, PROCESSA_NODE_EXPECTED(left, expectedType), PROCESSA_NODE_EXPECTED(right, expectedType), "addtmp"); 
+        return LLVMBuildFAdd(builder, PROCESSA_NODE_EXPECTED(left, LLVMFloatType()), PROCESSA_NODE_EXPECTED(right, LLVMFloatType()), "addtmp"); 
     else
-        return LLVMBuildSub(builder, PROCESSA_NODE_EXPECTED(left, expectedType), PROCESSA_NODE_EXPECTED(right, expectedType), "subtmp");
+        return LLVMBuildFSub(builder, PROCESSA_NODE_EXPECTED(left, LLVMFloatType()), PROCESSA_NODE_EXPECTED(right, LLVMFloatType()), "subtmp");
+    return LLVMBuildFPToSI(builder, result, expectedType, "convtmp");
 }
 
 Value gerar_retorna(Node* node, Type expectedType){

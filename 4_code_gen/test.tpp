@@ -1,5 +1,10 @@
 inteiro principal()
-	flutuante: a
-	a := 1.5
-	retorna(10 * a)
+	flutuante: a, b
+	a := 5.5
+	b := a + 2
+	se a > b então
+		retorna(a)
+	senão
+		retorna(a * b)
+	fim
 fim
