@@ -10,6 +10,7 @@
 LLVMModuleRef module;
 LLVMContextRef context;
 LLVMBuilderRef builder;
+Value function; // Função atual para geração dos blocos (se, repita...)
 char scope[256];
 
 void print_llvm_type(LLVMTypeRef t) {
@@ -32,6 +33,7 @@ void print_llvm_type(LLVMTypeRef t) {
 }
 
 Value processa_node(Node* node, Type expectedType);
+void gerar_acao(Node* node, Type expectedType);
 
 #define PROCESSA_NODE(node) processa_node(node, LLVMVoidType())
 #define PROCESSA_NODE_EXPECTED(node, expectedType) processa_node(node, expectedType)
@@ -61,7 +63,14 @@ Value num(Node* node, Type expectedType){
 Value var(Node* node, Type expectedType){
     vt_entry* entry = vt_obter_variavel_alocada(node->label);
     Type type = entry->type == T_INTEIRO ? LLVMInt32Type() : LLVMFloatType();
-    return LLVMBuildLoad2(builder, expectedType, entry->ref, node->label);
+    Value value = LLVMBuildLoad2(builder, type, entry->ref, node->label);
+    LLVMTypeKind originalKind = LLVMGetTypeKind(type), expectedKind = LLVMGetTypeKind(expectedType);
+    if(originalKind == expectedKind) return value;
+    if(originalKind == LLVMFloatTypeKind && expectedKind == LLVMIntegerTypeKind)
+        return LLVMBuildFPToSI(builder, value, expectedType, "float2int");
+    else if(originalKind == LLVMIntegerTypeKind && expectedKind == LLVMFloatTypeKind)
+        return LLVMBuildSIToFP(builder, value, expectedType, "int2float");
+    return NULL;
 }
 
 Value atribuicao(Node* node){
@@ -121,16 +130,73 @@ Value gerar_retorna(Node* node, Type expectedType){
     return LLVMBuildRet(builder, PROCESSA_NODE_EXPECTED(node->ch[0], expectedType));
 }
 
+Value se_senao(Node* node, Type expectedType){
+    LLVMBasicBlockRef blocoThen = LLVMAppendBasicBlock(function, "then");
+    LLVMBasicBlockRef blocoElse = LLVMAppendBasicBlock(function, "else");
+    LLVMBasicBlockRef blocoEnd = LLVMAppendBasicBlock(function, "end");
+
+    LLVMBuildCondBr(builder, PROCESSA_NODE_EXPECTED(node->ch[0], LLVMInt32Type()), blocoThen, blocoElse);
+
+    LLVMPositionBuilderAtEnd(builder, blocoThen);
+    gerar_acao(node->ch[1], expectedType); // gera o corpo do then
+    LLVMBuildBr(builder, blocoEnd); // Jump para fim
+
+    LLVMPositionBuilderAtEnd(builder, blocoElse);
+    gerar_acao(node->ch[2], expectedType); // gera o corpo do else
+    LLVMBuildBr(builder, blocoEnd); // Jump para fim
+
+    LLVMPositionBuilderAtEnd(builder, blocoEnd);
+}
+
+Value se(Node* node, Type expectedType){
+    LLVMBasicBlockRef blocoThen = LLVMAppendBasicBlock(function, "then");
+    LLVMBasicBlockRef blocoEnd = LLVMAppendBasicBlock(function, "end");
+
+    LLVMBuildCondBr(builder, PROCESSA_NODE_EXPECTED(node->ch[0], LLVMInt32Type()), blocoThen, blocoEnd);
+
+    LLVMPositionBuilderAtEnd(builder, blocoThen);
+    gerar_acao(node->ch[1], expectedType); // gera o corpo do then
+    LLVMBuildBr(builder, blocoEnd); // Jump para fim
+
+    LLVMPositionBuilderAtEnd(builder, blocoEnd);
+}
+
+Value expressao_simples(Node* node, Type expectedType){
+    Node* left = node->ch[0], *right = node->ch[1];
+    LLVMRealPredicate pred;
+    if(strcmp(node->label, ">") == 0)
+        pred = LLVMRealOGT;
+    else if(strcmp(node->label, "<") == 0)
+        pred = LLVMRealOLT;
+    else if(strcmp(node->label, ">=") == 0)
+        pred = LLVMRealOGE;
+    else if(strcmp(node->label, "<=") == 0)
+        pred = LLVMRealOLE;
+    else if(strcmp(node->label, "=") == 0)
+        pred = LLVMRealOEQ;
+    else if(strcmp(node->label, "<>") == 0)
+        pred = LLVMRealONE;
+    else
+        printf("Operador não implementado\n");
+    return LLVMBuildFCmp(builder, pred, PROCESSA_NODE_EXPECTED(left, LLVMFloatType()), PROCESSA_NODE_EXPECTED(right, LLVMFloatType()), "cmptmp");
+}
+
 Value processa_node(Node* node, Type expectedType){
     switch (node->type){
         case NT_RETORNA: return gerar_retorna(node, expectedType);
         case NT_EXPRESSAO_ADITIVA: return expressao_aditiva(node, expectedType);
         case NT_EXPRESSAO_MULTIPLICATIVA: return expressao_multiplicativa(node, expectedType);
+        case NT_EXPRESSAO_SIMPLES: return expressao_simples(node, expectedType);
         case NT_DECLARACAO_VARIAVEIS: return declaracao_variaveis(node);
         case NT_ATRIBUICAO: return atribuicao(node);
         case NT_NUM_INTEIRO: return num(node, expectedType);
         case NT_NUM_PONTO_FLUTUANTE: return num(node, expectedType);
         case NT_VAR: return var(node, expectedType);
+        case NT_SE:{
+            if(node->child_count == 3) return se_senao(node, expectedType);
+            return se(node, expectedType);
+        }
+        case NT_VAZIO: return NULL;
         
         default: printf("\033[0;35mProcessamento '%s' não implementado\033[0m\n", node_type_to_string(node));
     }
@@ -139,6 +205,7 @@ Value processa_node(Node* node, Type expectedType){
 }
 
 void gerar_acao(Node* node, Type expectedType){
+    if(node->type == NT_VAZIO) return;
     int i = 0;
     if(node->child_count == 2)
         gerar_acao(node->ch[i++], expectedType);
@@ -160,6 +227,7 @@ void gerar_cabecalho(Node* node, Type returnType){
     ParamList funcParam = gerar_lista_parametros(node->ch[1]);
     Type funcType = LLVMFunctionType(returnType, funcParam->types, funcParam->count, 0);
     Value func = LLVMAddFunction(module, funcName, funcType);
+    function = func; // Atualiza a função atual
 
     // Prepara a função para receber instruções
     LLVMBasicBlockRef entry = LLVMAppendBasicBlock(func, "entry");
@@ -168,7 +236,14 @@ void gerar_cabecalho(Node* node, Type returnType){
     // Gera o corpo da função
     gerar_acao(node->ch[2], returnType);
 
-    //Value ref = LLVMBuildAlloca(builder, LLVMDoubleType(), "ref");
+    // Coloca uma instrução de retorno padrão
+    LLVMTypeKind returnTypeKind = LLVMGetTypeKind(returnType);
+    if(returnTypeKind == LLVMVoidTypeKind)
+        LLVMBuildRetVoid(builder);
+    else if(returnTypeKind == LLVMFloatTypeKind)
+        LLVMBuildRet(builder, LLVMConstReal(returnType, 0.0));
+    else
+        LLVMBuildRet(builder, LLVMConstInt(returnType, 0, 0));
 
     free(funcParam);
     vt_remove_todos(scope);
