@@ -31,24 +31,10 @@ fim
 	retorna(a)
 fim}
 
-inteiro: var
-
-var := 10
-var := 4 + var
-
-inteiro func(inteiro: a, inteiro: b)
+inteiro func(inteiro: a, flutuante: b)
 	retorna(a + b)
 fim
 
-principal(inteiro: a, flutuante: b)
-	inteiro: x[10][50], y, z, w[50]
-	se (x > 0 + 2 * 1) && (x < 10 || x > 10) então
-		retorna(func(func(a:=1, 2), (10 + 2)))
-	fim
-
-	repita
-		escreva(a+1)
-		leia(z)
-		z := z + 1
-	até (z < 10 || z > 10 + 1 && (x:=1) > func(a+1, b/x[9][49]))
+inteiro principal()
+	func()
 fim

@@ -47,10 +47,9 @@ Node* podar_lista_argumentos(Node* node){
         node->ch[2] = podar_expressao(node->ch[2]);
         return node_create_add_children_and_destroy(node, node, 2, (int[]){0, 2});
     }
-    else if(node->ch[0]->type == NT_EXPRESSAO){
+    else if(node->ch[0]->type == NT_EXPRESSAO)
         node->ch[0] = podar_expressao(node->ch[0]);
-        return node;
-    }
+    return node;
 }
 
 Node* podar_chamada_funcao(Node* node){
@@ -209,16 +208,13 @@ Node* podar_se(Node* node){
     if(node->child_count == 5){
         node->ch[1] = podar_expressao(node->ch[1]);
         node->ch[3] = podar_corpo(node->ch[3]);
-        Node* new = node_create(node->label, node->type);
-        node_add_children(new, 2, node_clone(node->ch[1]), node_clone(node->ch[3]));
-        node_destroy(node);
-        return new;
+        return node_create_add_children_and_destroy(node, node, 2, (int[]){1, 3});
     }
     else{
         node->ch[1] = podar_expressao(node->ch[1]);
         node->ch[3] = podar_corpo(node->ch[3]);
         node->ch[5] = podar_corpo(node->ch[5]);
-        return node;
+        return node_create_add_children_and_destroy(node, node, 3, (int[]){1, 3, 5});
     }
 }
 
