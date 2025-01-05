@@ -1,6 +1,7 @@
 #include "code_gen.h"
 #include "types.h"
 #include "var_table.h"
+#include "func_table.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -21,7 +22,7 @@ void print_llvm_type(LLVMTypeRef t) {
             printf("Tipo: void\n");
             break;
         case LLVMFloatTypeKind:
-            printf("Tipo: double (64-bit floating point)\n");
+            printf("Tipo: float\n");
             break;
         case LLVMIntegerTypeKind:
             printf("Tipo: inteiro\n");
@@ -63,7 +64,13 @@ Value num(Node* node, Type expectedType){
 Value var(Node* node, Type expectedType){
     vt_entry* entry = vt_obter_variavel_alocada(node->label);
     Type type = entry->type == T_INTEIRO ? LLVMInt32Type() : LLVMFloatType();
-    Value value = LLVMBuildLoad2(builder, type, entry->ref, node->label);
+    Value value;
+
+    if(entry->isParam)
+        value = entry->ref;
+    else
+        value = LLVMBuildLoad2(builder, type, entry->ref, node->label);
+        
     LLVMTypeKind originalKind = LLVMGetTypeKind(type), expectedKind = LLVMGetTypeKind(expectedType);
     if(originalKind == expectedKind) return value;
     if(originalKind == LLVMFloatTypeKind && expectedKind == LLVMIntegerTypeKind)
@@ -95,7 +102,7 @@ Value lista_variaveis(Node* node, Type type){
     }
     for(int i = 0; i < node->child_count; i++){
         Value var = LLVMBuildAlloca(builder, type, node->ch[i]->label);
-        vt_insere_variavel_alocada(node->ch[i]->label, scope, var, t);
+        vt_insere_variavel_alocada(node->ch[i]->label, scope, var, t, false);
     }
     return NULL;
     // TODO tratar indice
@@ -120,9 +127,9 @@ Value expressao_aditiva(Node* node, Type expectedType){
     Node* left = node->ch[0], *right = node->ch[1];
     Value result;
     if(strcmp(node->label, "+") == 0)
-        return LLVMBuildFAdd(builder, PROCESSA_NODE_EXPECTED(left, LLVMFloatType()), PROCESSA_NODE_EXPECTED(right, LLVMFloatType()), "addtmp"); 
+        result = LLVMBuildFAdd(builder, PROCESSA_NODE_EXPECTED(left, LLVMFloatType()), PROCESSA_NODE_EXPECTED(right, LLVMFloatType()), "addtmp"); 
     else
-        return LLVMBuildFSub(builder, PROCESSA_NODE_EXPECTED(left, LLVMFloatType()), PROCESSA_NODE_EXPECTED(right, LLVMFloatType()), "subtmp");
+        result = LLVMBuildFSub(builder, PROCESSA_NODE_EXPECTED(left, LLVMFloatType()), PROCESSA_NODE_EXPECTED(right, LLVMFloatType()), "subtmp");
     return LLVMBuildFPToSI(builder, result, expectedType, "convtmp");
 }
 
@@ -190,6 +197,47 @@ Value expressao_logica(Node* node, Type expectedType){
     return NULL;
 }
 
+Value repita(Node* node, Type expectedType){
+    LLVMBasicBlockRef blocoRepita = LLVMAppendBasicBlock(function, "repita");
+    LLVMBasicBlockRef blocoFim = LLVMAppendBasicBlock(function, "fim");
+
+    LLVMBuildBr(builder, blocoRepita);
+
+    LLVMPositionBuilderAtEnd(builder, blocoRepita);
+    gerar_acao(node->ch[0], expectedType); // gera o corpo do repita
+    LLVMBuildCondBr(builder, PROCESSA_NODE_EXPECTED(node->ch[1], LLVMInt32Type()), blocoRepita, blocoFim);
+
+    LLVMPositionBuilderAtEnd(builder, blocoFim);
+}
+
+Value lista_argumentos(Node* node, Type returnType, Value* args, int* qt, Type* expectedTypes){
+    int i = 0;
+    if(node->child_count == 2)
+        lista_argumentos(node->ch[i++], returnType, args, qt, expectedTypes);
+    Node* argNode = node->ch[i];
+    if(argNode->type == NT_VAZIO)
+        return NULL;
+
+    Value value = PROCESSA_NODE_EXPECTED(argNode, expectedTypes[*qt]);
+    args[*qt] = value;
+    *qt = *qt + 1;
+    return NULL;
+}
+
+Value chamada_funcao(Node* node, Type expectedType){
+    ft_entry* func = ft_get_func_llvm(node->ch[0]->label);
+    if(func == NULL){
+        printf("Função '%s' não declarada\n", node->ch[0]->label);
+        return NULL;
+    }
+
+    Value* args = malloc(func->param_count * sizeof(Value));
+    int qt = 0;
+    lista_argumentos(node->ch[1], expectedType, args, &qt, func->paramTypes);
+    Value result = LLVMBuildCall2(builder, func->funcType, func->func, args, qt, "calltmp");
+    return result;
+}
+
 Value processa_node(Node* node, Type expectedType){
     switch (node->type){
         case NT_RETORNA: return gerar_retorna(node, expectedType);
@@ -206,6 +254,8 @@ Value processa_node(Node* node, Type expectedType){
             if(node->child_count == 3) return se_senao(node, expectedType);
             return se(node, expectedType);
         }
+        case NT_REPITA: return repita(node, expectedType);
+        case NT_CHAMADA_FUNCAO: return chamada_funcao(node, expectedType);
         case NT_VAZIO: return NULL;
         
         default: printf("\033[0;35mProcessamento '%s' não implementado\033[0m\n", node_type_to_string(node));
@@ -222,10 +272,30 @@ void gerar_acao(Node* node, Type expectedType){
     PROCESSA_NODE_EXPECTED(node->ch[i], expectedType);
 }
 
-ParamList gerar_lista_parametros(Node* node){
+void parametro(Node* node, ParamList list){
+    if(node->type == NT_VAZIO) return;
+    Type type = tipo(node->ch[0]->type);
+    Param param = malloc(sizeof(struct Param));
+    param->type = type;
+    param->name = node->ch[1]->label;
+    param->line = node->ch[1]->line;
+    list->params = realloc(list->params, (list->count + 1) * sizeof(Param));
+    list->params[list->count] = param;
+    list->count++;
+}
+
+void lista_parametros(Node* node, ParamList list){
+    int i = 0;
+    if(node->child_count == 2)
+        lista_parametros(node->ch[i++], list);
+    parametro(node->ch[i], list);
+}
+
+ParamList gerar_parametros(Node* node){
     ParamList list = malloc(sizeof(struct ParamList));
     list->count = 0;
-    list->types = NULL;
+    list->params = NULL;
+    lista_parametros(node, list);
     return list;
 }
 
@@ -234,14 +304,25 @@ void gerar_cabecalho(Node* node, Type returnType){
     if(strcmp(funcName, "principal") == 0)
         funcName = "main";
     strcpy(scope, funcName);
-    ParamList funcParam = gerar_lista_parametros(node->ch[1]);
-    Type funcType = LLVMFunctionType(returnType, funcParam->types, funcParam->count, 0);
+    ParamList funcParam = gerar_parametros(node->ch[1]);
+    Type* types = malloc(funcParam->count * sizeof(Type));
+    for(int i = 0; i < funcParam->count; i++) types[i] = funcParam->params[i]->type;
+    Type funcType = LLVMFunctionType(returnType, types, funcParam->count, 0);
     Value func = LLVMAddFunction(module, funcName, funcType);
     function = func; // Atualiza a função atual
+
+    ft_insere_func_llvm(funcName, funcType, types, func, funcParam->count);
 
     // Prepara a função para receber instruções
     LLVMBasicBlockRef entry = LLVMAppendBasicBlock(func, "entry");
     LLVMPositionBuilderAtEnd(builder, entry);
+
+    // Salvando todos os parametros na tabela
+    for(int i = 0; i < funcParam->count; i++){
+        Value param = LLVMGetParam(func, i);
+        vt_insere_variavel_alocada(funcParam->params[i]->name, scope, 
+            param, funcParam->params[i]->type == LLVMInt32Type() ? T_INTEIRO : T_FLUTUANTE, true);
+    }
 
     // Gera o corpo da função
     gerar_acao(node->ch[2], returnType);
@@ -255,7 +336,6 @@ void gerar_cabecalho(Node* node, Type returnType){
     else
         LLVMBuildRet(builder, LLVMConstInt(returnType, 0, 0));
 
-    free(funcParam);
     vt_remove_todos(scope);
 }
 
@@ -288,6 +368,7 @@ void gerar_declaracao(Node* node){
 
 void gerar_codigo(Node* root){
     vt_init();
+    ft_init();
     printf("Gerando código...\n");
 
     context = LLVMGetGlobalContext();
@@ -302,4 +383,6 @@ void gerar_codigo(Node* root){
 
     LLVMDisposeBuilder(builder);
     LLVMDisposeModule(module);
+    vt_destroy();
+    ft_destroy();
 }

@@ -406,7 +406,7 @@ void vt_verifica_inicializada_nao_utilizada(){
     vt->first = prev;
 }
 
-vt_entry* vt_insere_variavel_alocada(char* name, char* scope, Value ref, primitive_type type){
+vt_entry* vt_insere_variavel_alocada(char* name, char* scope, Value ref, primitive_type type, bool isParam){
     vt_entry* entry = (vt_entry*)malloc(sizeof(vt_entry));
     entry->name = name;
     entry->scope = scope;
@@ -418,7 +418,8 @@ vt_entry* vt_insere_variavel_alocada(char* name, char* scope, Value ref, primiti
     entry->used = true;
     entry->line = -1;
     entry->ref = ref;
-
+    entry->isParam = isParam;
+    
     entry->next = vt->first;
     vt->first = entry;
     vt->entry_count++;

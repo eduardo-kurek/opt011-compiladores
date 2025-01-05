@@ -236,11 +236,41 @@ void ft_destroy(){
     ft_entry* current = ft->first;
     while(current != NULL){
         ft_entry* next = current->next;
-        for(int i = 0; i < current->param_count; i++)
-            free(current->params[i]);
-        free(current->params);
+        if(current->params != NULL){
+            for(int i = 0; i < current->param_count; i++)
+                free(current->params[i]);
+            free(current->params);
+        }
         free(current);
         current = next;
     }
     free(ft);
+}
+
+ft_entry* ft_insere_func_llvm(char* name, Type funcType, Type* paramTypes, Value func, int paramsCount){
+    ft_entry* entry = (ft_entry*)malloc(sizeof(ft_entry));
+    entry->name = name;
+    entry->param_count = paramsCount;
+    entry->params = NULL;
+    entry->used = false;
+    entry->line = 0;
+    entry->func = func;
+    entry->funcType = funcType;
+    entry->paramTypes = paramTypes;
+
+    entry->next = ft->first;
+    ft->first = entry;
+    ft->entry_count++;
+
+    return entry;
+}
+
+ft_entry* ft_get_func_llvm(char* name){
+    ft_entry* current = ft->first;
+    while(current != NULL){
+        if(strcmp(current->name, name) == 0)
+            return current;
+        current = current->next;
+    }
+    return NULL;
 }

@@ -23,9 +23,16 @@ typedef struct var_table_entry vt_entry;
 typedef LLVMValueRef Value;
 typedef LLVMTypeRef Type;
 
+typedef struct Param{
+    Type type;
+    int line;
+    char* name;
+}* Param;
+
 typedef struct ParamList{
-    Type* types;
+    Param* params;
     int count;
 }* ParamList;
+
 
 #endif

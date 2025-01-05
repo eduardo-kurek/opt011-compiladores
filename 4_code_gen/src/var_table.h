@@ -17,6 +17,7 @@ struct var_table_entry {
     bool used;
     int line;
     Value ref;
+    bool isParam; // Indica se é um parâmetro de uma variavel
 };
 
 struct var_table {
@@ -44,7 +45,7 @@ void vt_verifica_nao_utilizada();
 void vt_verifica_inicializada_nao_utilizada();
 void vt_verifica_nao_inicializada();
 
-vt_entry* vt_insere_variavel_alocada(char* name, char* scope, Value ref, primitive_type type);
+vt_entry* vt_insere_variavel_alocada(char* name, char* scope, Value ref, primitive_type type, bool isParam);
 vt_entry* vt_obter_variavel_alocada(char* name);
 
 #endif

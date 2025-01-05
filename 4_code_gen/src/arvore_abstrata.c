@@ -47,10 +47,9 @@ Node* podar_lista_argumentos(Node* node){
         node->ch[2] = podar_expressao(node->ch[2]);
         return node_create_add_children_and_destroy(node, node, 2, (int[]){0, 2});
     }
-    else if(node->ch[0]->type == NT_EXPRESSAO){
+    else if(node->ch[0]->type == NT_EXPRESSAO)
         node->ch[0] = podar_expressao(node->ch[0]);
-        return node;
-    }
+    return node;
 }
 
 Node* podar_chamada_funcao(Node* node){

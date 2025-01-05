@@ -18,6 +18,10 @@ typedef struct func_table_entry {
     bool used;
     int line;
 
+    Value func;
+    Type funcType;
+    Type* paramTypes;
+
     struct func_table_entry* next; // Lista encadeada
 } ft_entry;
 
@@ -44,6 +48,9 @@ void ft_verifica_declarada_nao_chamada();
 ft_entry* ft_verifica_funcao_existe(char* name);
 void ft_verifica_quantidade_parametros(ft_entry* func, Node* lista_argumentos);
 bool ft_verifica_chamada_para_principal(char* name, char* scope);
+
+ft_entry* ft_insere_func_llvm(char* name, Type funcType, Type* paramTypes, Value func, int paramsCount);
+ft_entry* ft_get_func_llvm(char* name);
 
 void ft_imprime();
 void ft_destroy();
