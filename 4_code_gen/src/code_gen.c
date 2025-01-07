@@ -7,12 +7,19 @@
 #include <string.h>
 #include <llvm-c/Core.h>
 #include <llvm-c/BitWriter.h>
+#include <llvm-c/IRReader.h> // Para LLVMParseIRInContext
+#include <llvm-c/Linker.h>
 
 LLVMModuleRef module;
 LLVMContextRef context;
 LLVMBuilderRef builder;
 Value function; // Função atual para geração dos blocos (se, repita...)
 char scope[256];
+
+StdFunc escrevaInteiro;
+StdFunc escrevaFlutuante;
+StdFunc leiaInteiro;
+StdFunc leiaFlutuante;
 
 void print_llvm_type(LLVMTypeRef t) {
     LLVMTypeKind typeKind = LLVMGetTypeKind(t);
@@ -39,6 +46,8 @@ void gerar_acao(Node* node, Type expectedType);
 #define PROCESSA_NODE(node) processa_node(node, LLVMVoidType())
 #define PROCESSA_NODE_EXPECTED(node, expectedType) processa_node(node, expectedType)
 
+Kind get_kind(Value* value){ return LLVMGetTypeKind(LLVMTypeOf(*value)); }
+
 Type tipo(node_type type){
     if(type == NT_INTEIRO) return LLVMInt32Type();
     else if(NT_FLUTUANTE) return LLVMFloatType();
@@ -47,6 +56,18 @@ Type tipo(node_type type){
 
 Value inteiro(){ return LLVMConstPointerNull(LLVMPointerType(LLVMInt32Type(), 0)); }
 
+// Converte value para expectedType se necessário. Caso Type seja void, não faz nada.
+Value converte(Value value, Type expectedType){
+    Kind expectedKind = LLVMGetTypeKind(expectedType), kind = get_kind(&value);
+    if(expectedKind == LLVMVoidTypeKind) return value;
+    if(expectedKind == kind) return value;
+    if(expectedKind == LLVMFloatTypeKind && kind == LLVMIntegerTypeKind)
+        return LLVMBuildSIToFP(builder, value, expectedType, "int2float");
+    else if(expectedKind == LLVMIntegerTypeKind && kind == LLVMFloatTypeKind)
+        return LLVMBuildFPToSI(builder, value, expectedType, "float2int");
+    printf("Conversão não implementada\n");
+}
+
 Value num(Node* node, Type expectedType){
     LLVMTypeKind kind = LLVMGetTypeKind(expectedType);
     switch(kind){
@@ -54,6 +75,9 @@ Value num(Node* node, Type expectedType){
             return LLVMConstReal(LLVMFloatType(), atof(node->label));
         case LLVMIntegerTypeKind:
             return LLVMConstInt(LLVMInt32Type(), atoi(node->label), 0);
+        case LLVMVoidTypeKind:
+            if(node->type == NT_NUM_INTEIRO) return LLVMConstInt(LLVMInt32Type(), atoi(node->label), 0);
+            return LLVMConstReal(LLVMFloatType(), atof(node->label));
         default:
             printf("Tipo inesperado\n");
             print_llvm_type(expectedType);
@@ -65,19 +89,9 @@ Value var(Node* node, Type expectedType){
     vt_entry* entry = vt_obter_variavel_alocada(node->label);
     Type type = entry->type == T_INTEIRO ? LLVMInt32Type() : LLVMFloatType();
     Value value;
-
-    if(entry->isParam)
-        value = entry->ref;
-    else
-        value = LLVMBuildLoad2(builder, type, entry->ref, node->label);
-        
-    LLVMTypeKind originalKind = LLVMGetTypeKind(type), expectedKind = LLVMGetTypeKind(expectedType);
-    if(originalKind == expectedKind) return value;
-    if(originalKind == LLVMFloatTypeKind && expectedKind == LLVMIntegerTypeKind)
-        return LLVMBuildFPToSI(builder, value, expectedType, "float2int");
-    else if(originalKind == LLVMIntegerTypeKind && expectedKind == LLVMFloatTypeKind)
-        return LLVMBuildSIToFP(builder, value, expectedType, "int2float");
-    return NULL;
+    if(entry->isParam) value = entry->ref;
+    else value = LLVMBuildLoad2(builder, type, entry->ref, node->label);
+    return converte(value, expectedType);
 }
 
 Value atribuicao(Node* node){
@@ -115,22 +129,44 @@ Value declaracao_variaveis(Node* node){
 
 Value expressao_multiplicativa(Node* node, Type expectedType){
     Node* left = node->ch[0], *right = node->ch[1];
-    Value result;
-    if(strcmp(node->label, "*") == 0)
-        result = LLVMBuildFMul(builder, PROCESSA_NODE_EXPECTED(left, LLVMFloatType()), PROCESSA_NODE_EXPECTED(right, LLVMFloatType()), "multmp");
-    else
-        result = LLVMBuildFDiv(builder, PROCESSA_NODE_EXPECTED(left, LLVMFloatType()), PROCESSA_NODE_EXPECTED(right, LLVMFloatType()), "divtmp");
-    return LLVMBuildFPToSI(builder, result, expectedType, "convtmp");
+    Value leftValue = PROCESSA_NODE_EXPECTED(left, LLVMVoidType()), rightValue = PROCESSA_NODE_EXPECTED(right, LLVMVoidType());
+    Kind leftKind = get_kind(&leftValue), rightKind = get_kind(&rightValue);
+    bool isMul = strcmp(node->label, "*") == 0;
+
+    // Se os dois numeros forem inteiros, retorna um inteiro
+    if(leftKind == LLVMIntegerTypeKind && rightKind == LLVMIntegerTypeKind){
+        if(isMul) return converte(LLVMBuildMul(builder, leftValue, rightValue, "multmp"), expectedType);
+        return converte(LLVMBuildSDiv(builder, leftValue, rightValue, "divtmp"), expectedType);
+    }
+    
+    // Converte ambos para float
+    leftValue = converte(leftValue, LLVMFloatType());
+    rightValue = converte(rightValue, LLVMFloatType());
+
+    // Faz operação em floats
+    if(isMul) return converte(LLVMBuildFMul(builder, leftValue, rightValue, "multmp"), expectedType);
+    return converte(LLVMBuildFDiv(builder, leftValue, rightValue, "divtmp"), expectedType);
 }
 
 Value expressao_aditiva(Node* node, Type expectedType){
     Node* left = node->ch[0], *right = node->ch[1];
-    Value result;
-    if(strcmp(node->label, "+") == 0)
-        result = LLVMBuildFAdd(builder, PROCESSA_NODE_EXPECTED(left, LLVMFloatType()), PROCESSA_NODE_EXPECTED(right, LLVMFloatType()), "addtmp"); 
-    else
-        result = LLVMBuildFSub(builder, PROCESSA_NODE_EXPECTED(left, LLVMFloatType()), PROCESSA_NODE_EXPECTED(right, LLVMFloatType()), "subtmp");
-    return LLVMBuildFPToSI(builder, result, expectedType, "convtmp");
+    Value leftValue = PROCESSA_NODE_EXPECTED(left, LLVMVoidType()), rightValue = PROCESSA_NODE_EXPECTED(right, LLVMVoidType());
+    Kind leftKind = get_kind(&leftValue), rightKind = get_kind(&rightValue);
+    bool isSum = strcmp(node->label, "+") == 0;
+
+    // Se os dois numeros forem inteiros, retorna um inteiro
+    if(leftKind == LLVMIntegerTypeKind && rightKind == LLVMIntegerTypeKind){
+        if(isSum) return converte(LLVMBuildAdd(builder, leftValue, rightValue, "addtmp"), expectedType);
+        return converte(LLVMBuildSub(builder, leftValue, rightValue, "subtmp"), expectedType);
+    }
+
+    // Converte ambos para float
+    leftValue = converte(leftValue, LLVMFloatType());
+    rightValue = converte(rightValue, LLVMFloatType());
+
+    // Faz a soma em floats
+    if(isSum) return converte(LLVMBuildFAdd(builder, leftValue, rightValue, "addtmp"), expectedType);
+    return converte(LLVMBuildFSub(builder, leftValue, rightValue, "subtmp"), expectedType);
 }
 
 Value gerar_retorna(Node* node, Type expectedType){
@@ -238,6 +274,15 @@ Value chamada_funcao(Node* node, Type expectedType){
     return result;
 }
 
+Value escreva(Node* node, Type expectedType){
+    Value value = PROCESSA_NODE_EXPECTED(node->ch[0], LLVMVoidType());
+    Kind kind = get_kind(&value);
+    if(kind == LLVMIntegerTypeKind)
+        return LLVMBuildCall2(builder, escrevaInteiro.type, escrevaInteiro.func, (Value[]){ value }, 1, "");
+    else if(kind == LLVMFloatTypeKind)
+        return LLVMBuildCall2(builder, escrevaFlutuante.type, escrevaFlutuante.func, (Value[]){ value }, 1, "");
+}
+
 Value processa_node(Node* node, Type expectedType){
     switch (node->type){
         case NT_RETORNA: return gerar_retorna(node, expectedType);
@@ -256,6 +301,7 @@ Value processa_node(Node* node, Type expectedType){
         }
         case NT_REPITA: return repita(node, expectedType);
         case NT_CHAMADA_FUNCAO: return chamada_funcao(node, expectedType);
+        case NT_ESCREVA: return escreva(node, expectedType);
         case NT_VAZIO: return NULL;
         
         default: printf("\033[0;35mProcessamento '%s' não implementado\033[0m\n", node_type_to_string(node));
@@ -366,6 +412,27 @@ void gerar_declaracao(Node* node){
     }
 }
 
+void linkar_biblioteca_std(LLVMModuleRef module){
+    LLVMMemoryBufferRef buffer;
+    LLVMModuleRef stdModule;
+
+    LLVMCreateMemoryBufferWithContentsOfFile("src/std.ll", &buffer, NULL);
+    LLVMParseIRInContext(context, buffer, &stdModule, NULL);
+    LLVMLinkModules2(module, stdModule);
+
+    escrevaInteiro.func = LLVMGetNamedFunction(module, "escrevaInteiro");
+    escrevaInteiro.type = LLVMFunctionType(LLVMVoidType(), (Type[]){ LLVMInt32Type() }, 1, false);
+
+    escrevaFlutuante.func = LLVMGetNamedFunction(module, "escrevaFlutuante");
+    escrevaFlutuante.type = LLVMFunctionType(LLVMVoidType(), (Type[]){ LLVMFloatType() }, 1, false);
+
+    leiaInteiro.func = LLVMGetNamedFunction(module, "leiaInteiro");
+    leiaInteiro.type = LLVMFunctionType(LLVMVoidType(), (Type[]){ LLVMPointerType(LLVMInt32Type(), 0) }, 1, false);
+
+    leiaFlutuante.func = LLVMGetNamedFunction(module, "leiaFlutuante");
+    leiaFlutuante.type = LLVMFunctionType(LLVMVoidType(), (Type[]){ LLVMPointerType(LLVMFloatType(), 0) }, 1, false);
+}
+
 void gerar_codigo(Node* root){
     vt_init();
     ft_init();
@@ -375,6 +442,7 @@ void gerar_codigo(Node* root){
     module = LLVMModuleCreateWithName("program.bc");
     builder = LLVMCreateBuilder();
 
+    linkar_biblioteca_std(module);
     gerar_declaracao(root->ch[0]);
 
     if(LLVMPrintModuleToFile(module, "output.ll", NULL) != 0){

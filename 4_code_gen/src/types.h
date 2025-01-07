@@ -22,6 +22,7 @@ typedef struct var_table_entry vt_entry;
 
 typedef LLVMValueRef Value;
 typedef LLVMTypeRef Type;
+typedef LLVMTypeKind Kind;
 
 typedef struct Param{
     Type type;
@@ -33,6 +34,11 @@ typedef struct ParamList{
     Param* params;
     int count;
 }* ParamList;
+
+typedef struct StdFunc{
+    Value func;
+    Type type;
+} StdFunc;
 
 
 #endif
