@@ -1,5 +1,6 @@
 inteiro principal()
-	flutuante: a
+	flutuante: a, b
 	a := 1.5
-	escreva((a * 3) + 2)
+	leia(b)
+	escreva((a * 3) + b)
 fim

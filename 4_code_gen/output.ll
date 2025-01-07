@@ -52,10 +52,13 @@ define dso_local void @leiaFlutuante(ptr noundef %0) #0 {
 define i32 @main() {
 entry:
   %a = alloca float, align 4
+  %b = alloca float, align 4
   store float 1.500000e+00, ptr %a, align 4
+  call void @leiaFlutuante(ptr %b)
   %a1 = load float, ptr %a, align 4
   %multmp = fmul float %a1, 3.000000e+00
-  %addtmp = fadd float %multmp, 2.000000e+00
+  %b2 = load float, ptr %b, align 4
+  %addtmp = fadd float %multmp, %b2
   call void @escrevaFlutuante(float %addtmp)
   ret i32 0
 }

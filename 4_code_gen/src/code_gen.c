@@ -283,6 +283,20 @@ Value escreva(Node* node, Type expectedType){
         return LLVMBuildCall2(builder, escrevaFlutuante.type, escrevaFlutuante.func, (Value[]){ value }, 1, "");
 }
 
+Value leia(Node* node, Type expectedType){
+    vt_entry* entry = vt_obter_variavel_alocada(node->ch[0]->label);
+    if(entry == NULL) {
+        printf("Variavel %s não alocada", node->ch[0]->label);
+        return NULL;
+    }
+    Value value = entry->ref;
+    Kind kind = entry->type == T_INTEIRO ? LLVMIntegerTypeKind : LLVMFloatTypeKind;
+    if(kind == LLVMIntegerTypeKind)
+        return LLVMBuildCall2(builder, leiaInteiro.type, leiaInteiro.func, (Value[]){ value }, 1, "");
+    else if(kind == LLVMFloatTypeKind)
+        return LLVMBuildCall2(builder, leiaFlutuante.type, leiaFlutuante.func, (Value[]){ value }, 1, "");
+}
+
 Value processa_node(Node* node, Type expectedType){
     switch (node->type){
         case NT_RETORNA: return gerar_retorna(node, expectedType);
@@ -302,6 +316,7 @@ Value processa_node(Node* node, Type expectedType){
         case NT_REPITA: return repita(node, expectedType);
         case NT_CHAMADA_FUNCAO: return chamada_funcao(node, expectedType);
         case NT_ESCREVA: return escreva(node, expectedType);
+        case NT_LEIA: return leia(node, expectedType);
         case NT_VAZIO: return NULL;
         
         default: printf("\033[0;35mProcessamento '%s' não implementado\033[0m\n", node_type_to_string(node));
