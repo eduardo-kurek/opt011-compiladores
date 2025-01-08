@@ -247,8 +247,9 @@ void ft_destroy(){
     free(ft);
 }
 
-ft_entry* ft_insere_func_llvm(char* name, Type funcType, Type* paramTypes, Value func, int paramsCount){
+ft_entry* ft_insere_func_llvm(char* name, Type funcType, Type* paramTypes, Value func, int paramsCount, primitive_type returnType){
     ft_entry* entry = (ft_entry*)malloc(sizeof(ft_entry));
+    entry->return_type = returnType;
     entry->name = name;
     entry->param_count = paramsCount;
     entry->params = NULL;

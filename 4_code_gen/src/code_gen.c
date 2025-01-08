@@ -14,7 +14,7 @@ LLVMModuleRef module;
 LLVMContextRef context;
 LLVMBuilderRef builder;
 Value function; // Função atual para geração dos blocos (se, repita...)
-char scope[256];
+char scope[256] = "global";
 
 StdFunc escrevaInteiro;
 StdFunc escrevaFlutuante;
@@ -127,6 +127,19 @@ Value var(Node* node, Type expectedType){
     return converte(value, expectedType);
 }
 
+bool escopo_global(){
+    return strcmp(scope, "global") == 0;
+}
+
+Value guarda(Value expression, Value var){
+    if(escopo_global()){
+        Kind kind = get_kind(&var);
+        LLVMSetInitializer(var, expression);
+        return NULL;
+    }
+    return LLVMBuildStore(builder, expression, var);
+}
+
 Value guarda_matriz(Value expression, Value var, Value rowIndex, Value colIndex){
     Value rowIdx = LLVMBuildTrunc(builder, rowIndex, LLVMInt32Type(), "rowIndex");
     Value colIdx = LLVMBuildTrunc(builder, colIndex, LLVMInt32Type(), "colIndex");
@@ -136,17 +149,17 @@ Value guarda_matriz(Value expression, Value var, Value rowIndex, Value colIndex)
         (Value[]){ LLVMConstInt(LLVMInt32Type(), 0, 0), rowIdx, colIdx }, 
         3, "ptr_element"
     );
-    return LLVMBuildStore(builder, expression, ptr);
+    return guarda(expression, ptr);
 }
 
 Value guarda_vetor(Value expression, Value var, Value index){
     Type arrayType = LLVMGetAllocatedType(var);
     Value ptr = LLVMBuildGEP2(builder, arrayType, var, (Value[]){ LLVMConstInt(LLVMInt32Type(), 0, 0), index }, 2, "ptr_element");
-    return LLVMBuildStore(builder, expression, ptr);
+    return guarda(expression, ptr);
 }
 
 Value guarda_escalar(Value expression, Value var){
-    return LLVMBuildStore(builder, expression, var);
+    return guarda(expression, var);
 }
 
 Value atribuicao(Node* node){
@@ -184,11 +197,24 @@ var_dimension get_dimension(Node* node, Value* dim1, Value* dim2){
     return MATRIX;
 }
 
-Value aloca_escalar(char* name, Type type, primitive_type primitive){
-    return LLVMBuildAlloca(builder, type, name);
+Value aloca(char* name, Type type){
+    if(escopo_global()){
+        Value globalVar = LLVMAddGlobal(module, type, name);
+        Kind kind = LLVMGetTypeKind(type);
+        if(kind == LLVMIntegerTypeKind)
+            LLVMSetInitializer(globalVar, LLVMConstInt(type, 0, 0));
+        else if(kind == LLVMFloatTypeKind)
+            LLVMSetInitializer(globalVar, LLVMConstReal(type, 0.0));
+        return globalVar;
+    }
+    else return LLVMBuildAlloca(builder, type, name);
 }
 
-Value aloca_vetor(char* name, Type type, primitive_type primitive, Value dim1){
+Value aloca_escalar(char* name, Type type){
+    return aloca(name, type);
+}
+
+Value aloca_vetor(char* name, Type type, Value dim1){
     Value constDimSize = LLVMBuildIntCast2(builder, dim1, LLVMInt32Type(), false, "");
     if(!LLVMIsConstant(constDimSize)){
         printf("Tamanho do vetor %s deve ser constante\n", name);
@@ -197,10 +223,10 @@ Value aloca_vetor(char* name, Type type, primitive_type primitive, Value dim1){
 
     unsigned arraySize = LLVMConstIntGetZExtValue(constDimSize);
     LLVMTypeRef arrayType = LLVMArrayType2(type, arraySize);
-    return LLVMBuildAlloca(builder, arrayType, name);
+    return aloca(name, arrayType);
 }
 
-Value aloca_matriz(char* name, Type type, primitive_type primitive, Value dim1, Value dim2) {
+Value aloca_matriz(char* name, Type type, Value dim1, Value dim2) {
     Value dimSize1 = LLVMBuildTrunc(builder, dim1, LLVMInt32Type(), "dimSize1");
     Value dimSize2 = LLVMBuildTrunc(builder, dim2, LLVMInt32Type(), "dimSize2");
 
@@ -217,8 +243,9 @@ Value aloca_matriz(char* name, Type type, primitive_type primitive, Value dim1, 
 
     LLVMTypeRef rowType = LLVMArrayType(type, arraySize2);
     LLVMTypeRef matrixType = LLVMArrayType(rowType, arraySize1);
-    return LLVMBuildAlloca(builder, matrixType, name);
+    return aloca(name, matrixType);
 }
+
 
 Value lista_variaveis(Node* node, Type type){
     primitive_type primitive;
@@ -241,13 +268,13 @@ Value lista_variaveis(Node* node, Type type){
         Value var;
         char* name = node->ch[i]->label;
         switch(dim){
-            case SCALAR: var = aloca_escalar(name, type, primitive); break;
-            case VECTOR: var = aloca_vetor(name, type, primitive, dim1); break;
-            case MATRIX: var = aloca_matriz(name, type, primitive, dim1, dim2); break;
+            case SCALAR: var = aloca_escalar(name, type); break;
+            case VECTOR: var = aloca_vetor(name, type, dim1); break;
+            case MATRIX: var = aloca_matriz(name, type, dim1, dim2); break;
             default: printf("Dimensão não implementada\n");
         }
 
-        vt_insere_variavel_alocada(name, scope, var, dim1, dim2, dim, primitive, false);
+        vt_insere_variavel_alocada(name, strdup(scope), var, dim1, dim2, dim, primitive, false);
     }
     return NULL;
 }
@@ -400,8 +427,8 @@ Value chamada_funcao(Node* node, Type expectedType){
     Value* args = malloc(func->param_count * sizeof(Value));
     int qt = 0;
     lista_argumentos(node->ch[1], expectedType, args, &qt, func->paramTypes);
-    Value result = LLVMBuildCall2(builder, func->funcType, func->func, args, qt, "calltmp");
-    return result;
+    if(func->return_type == T_VAZIO) return LLVMBuildCall2(builder, func->funcType, func->func, args, qt, "");
+    return LLVMBuildCall2(builder, func->funcType, func->func, args, qt, "calltmp");
 }
 
 Value escreva(Node* node, Type expectedType){
@@ -540,7 +567,11 @@ void gerar_cabecalho(Node* node, Type returnType){
     Value func = LLVMAddFunction(module, funcName, funcType);
     function = func; // Atualiza a função atual
 
-    ft_insere_func_llvm(funcName, funcType, types, func, funcParam->count);
+    primitive_type retType;
+    if(returnType == LLVMInt32Type()) retType = T_INTEIRO;
+    else if(returnType == LLVMFloatType()) retType = T_FLUTUANTE;
+    else retType = T_VAZIO;
+    ft_insere_func_llvm(funcName, funcType, types, func, funcParam->count, retType);
 
     // Prepara a função para receber instruções
     LLVMBasicBlockRef entry = LLVMAppendBasicBlock(func, "entry");
@@ -568,6 +599,7 @@ void gerar_cabecalho(Node* node, Type returnType){
         LLVMBuildRet(builder, LLVMConstInt(returnType, 0, 0));
 
     vt_remove_todos(scope);
+    strcpy(scope, "global");
 }
 
 void gerar_declaracao_funcao(Node* node){
@@ -589,7 +621,14 @@ void gerar_declaracao(Node* node){
             gerar_declaracao_funcao(node->ch[i]);
             break;
         
-        // TODO restantes dos casos
+        case NT_DECLARACAO_VARIAVEIS:
+            strcpy(scope, "global");
+            declaracao_variaveis(node->ch[i]);
+            break;
+
+        case NT_INICIALIZACAO_VARIAVEIS:
+            atribuicao(node->ch[i]->ch[0]);
+            break;
 
         default:
             printf("Declaração não implementada\n");

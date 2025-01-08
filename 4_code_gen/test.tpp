@@ -1,3 +1,5 @@
+{inteiro: g
+
 inteiro principal()
 	inteiro: a[3][3], i, j, count
 	count := 0
@@ -5,7 +7,7 @@ inteiro principal()
 	repita
 		j := 0
 		repita
-			a[i][j] := count
+			a[i][j] := count + g
 			count := count + 1
 			j := j + 1
 		até j < 3
@@ -23,4 +25,20 @@ inteiro principal()
 	até i < 3
 
 	retorna(0)
-fim 
+fim }
+
+flutuante: g
+g := 2.53
+
+teste(flutuante: arg)
+	g := g + arg
+	escreva(g)
+fim
+	
+inteiro principal() 
+	flutuante: g
+	g := 1.92
+	escreva(g)
+	teste(g)
+	retorna(0)
+fim

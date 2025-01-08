@@ -434,13 +434,20 @@ vt_entry* vt_insere_variavel_alocada(char* name, char* scope,
 
 vt_entry* vt_obter_variavel_alocada(char* name){
     vt_entry* current = vt->first;
+    vt_entry* global_entry = NULL;
+
     while(current != NULL){
         if(strcmp(current->name, name) == 0){
-            return current;
+            if(strcmp(current->scope, "global") == 0){
+                global_entry = current;
+            }else{
+                return current;
+            }
         }
         current = current->next;
     }
-    return NULL;
+
+    return global_entry;
 }
 
 void vt_remove_todos(char* scope){
