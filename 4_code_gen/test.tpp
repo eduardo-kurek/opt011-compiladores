@@ -1,6 +1,6 @@
-inteiro principal()
-	flutuante: a, b
-	a := 1.5
-	leia(b)
-	escreva((a * 3) + b)
-fim
+principal()
+	flutuante: b[10][1], c
+	b[2][0] := 1.0
+	c := b[2][0]
+	escreva(c)
+fim 

@@ -85,13 +85,69 @@ Value num(Node* node, Type expectedType){
     }
 }
 
+Value carrega_matriz(char* name, Type type, Value reference, Value rowIndex, Value colIndex){
+    Value rowIdx = LLVMBuildTrunc(builder, rowIndex, LLVMInt32Type(), "rowIndex");
+    Value colIdx = LLVMBuildTrunc(builder, colIndex, LLVMInt32Type(), "colIndex");
+    Type matrixType = LLVMGetAllocatedType(reference);
+    Value ptr = LLVMBuildGEP2(
+        builder, matrixType, reference, 
+        (Value[]){ LLVMConstInt(LLVMInt32Type(), 0, 0), rowIdx, colIdx }, 
+        3, "ptr_element"
+    );
+    return LLVMBuildLoad2(builder, type, ptr, name);
+}
+
+Value carrega_vetor(char* name, Type type, Value reference, Value index){
+    Value idx = LLVMBuildTrunc(builder, index, LLVMInt32Type(), "index");
+    Type arrayType = LLVMGetAllocatedType(reference);
+    Value ptr = LLVMBuildGEP2(builder, arrayType, reference, (Value[]){ LLVMConstInt(LLVMInt32Type(), 0, 0), idx }, 2, "ptr_element");
+    return LLVMBuildLoad2(builder, type, ptr, name);
+}
+
+Value carrega_escalar(char* name, Type type, Value reference){
+    return LLVMBuildLoad2(builder, type, reference, name);
+}
+
 Value var(Node* node, Type expectedType){
     vt_entry* entry = vt_obter_variavel_alocada(node->label);
     Type type = entry->type == T_INTEIRO ? LLVMInt32Type() : LLVMFloatType();
     Value value;
     if(entry->isParam) value = entry->ref;
-    else value = LLVMBuildLoad2(builder, type, entry->ref, node->label);
+    else{
+        switch (entry->dim){
+            case SCALAR: value = carrega_escalar(node->label, type, entry->ref); break;
+            case VECTOR: value = carrega_vetor(node->label, type, entry->ref, PROCESSA_NODE_EXPECTED(node->ch[0]->ch[0], LLVMInt32Type())); break;
+            case MATRIX:
+                Value row = PROCESSA_NODE_EXPECTED(node->ch[0]->ch[0]->ch[0], LLVMInt32Type());
+                Value col = PROCESSA_NODE_EXPECTED(node->ch[0]->ch[1], LLVMInt32Type());
+                value = carrega_matriz(node->label, type, entry->ref, row, col);
+            default: break;
+        }
+    }
     return converte(value, expectedType);
+}
+
+Value guarda_matriz(Value expression, Value var, Value rowIndex, Value colIndex){
+    Value rowIdx = LLVMBuildTrunc(builder, rowIndex, LLVMInt32Type(), "rowIndex");
+    Value colIdx = LLVMBuildTrunc(builder, colIndex, LLVMInt32Type(), "colIndex");
+    Type matrixType = LLVMGetAllocatedType(var);
+    Value ptr = LLVMBuildGEP2(
+        builder, matrixType, var, 
+        (Value[]){ LLVMConstInt(LLVMInt32Type(), 0, 0), rowIdx, colIdx }, 
+        3, "ptr_element"
+    );
+    return LLVMBuildStore(builder, expression, ptr);
+}
+
+Value guarda_vetor(Value expression, Value var, Value index){
+    Value idx = LLVMBuildTrunc(builder, index, LLVMInt32Type(), "index");
+    Type arrayType = LLVMGetAllocatedType(var);
+    Value ptr = LLVMBuildGEP2(builder, arrayType, var, (Value[]){ LLVMConstInt(LLVMInt32Type(), 0, 0), idx }, 2, "ptr_element");
+    return LLVMBuildStore(builder, expression, ptr);
+}
+
+Value guarda_escalar(Value expression, Value var){
+    return LLVMBuildStore(builder, expression, var);
 }
 
 Value atribuicao(Node* node){
@@ -99,27 +155,102 @@ Value atribuicao(Node* node){
     Value var = entry->ref;
     Type type = entry->type == T_INTEIRO ? LLVMInt32Type() : LLVMFloatType();
     Value expr = PROCESSA_NODE_EXPECTED(node->ch[1], type);
-    return LLVMBuildStore(builder, expr, var);
+
+    switch(entry->dim){
+        case SCALAR: return guarda_escalar(expr, var);
+        case VECTOR: return guarda_vetor(expr, var, PROCESSA_NODE_EXPECTED(node->ch[0]->ch[0], LLVMInt32Type()));
+        case MATRIX: 
+            Value row = PROCESSA_NODE_EXPECTED(node->ch[0]->ch[0]->ch[0]->ch[0], LLVMInt32Type());
+            Value col = PROCESSA_NODE_EXPECTED(node->ch[0]->ch[0]->ch[1], LLVMInt32Type());
+            return guarda_matriz(expr, var, row, col);
+        default: break;
+    }
+}
+
+var_dimension get_dimension(Node* node, Value* dim1, Value* dim2){
+    if(node->child_count == 0){
+        *dim1 = NULL;
+        *dim2 = NULL;
+        return SCALAR;
+    }
+
+    if(node->ch[0]->child_count == 1){
+        *dim1 = PROCESSA_NODE_EXPECTED(node->ch[0]->ch[0], LLVMInt32Type());
+        *dim2 = NULL;
+        return VECTOR;
+    }
+
+    *dim1 = PROCESSA_NODE_EXPECTED(node->ch[0]->ch[0]->ch[0], LLVMInt32Type());
+    *dim2 = PROCESSA_NODE_EXPECTED(node->ch[0]->ch[1], LLVMInt32Type());
+    return MATRIX;
+}
+
+Value aloca_escalar(char* name, Type type, primitive_type primitive){
+    return LLVMBuildAlloca(builder, type, name);
+}
+
+Value aloca_vetor(char* name, Type type, primitive_type primitive, Value dim1){
+    Value constDimSize = LLVMBuildIntCast2(builder, dim1, LLVMInt32Type(), false, "");
+    if(!LLVMIsConstant(constDimSize)){
+        printf("Tamanho do vetor %s deve ser constante\n", name);
+        return NULL;
+    }
+
+    unsigned arraySize = LLVMConstIntGetZExtValue(constDimSize);
+    LLVMTypeRef arrayType = LLVMArrayType2(type, arraySize);
+    return LLVMBuildAlloca(builder, arrayType, name);
+}
+
+Value aloca_matriz(char* name, Type type, primitive_type primitive, Value dim1, Value dim2) {
+    Value dimSize1 = LLVMBuildTrunc(builder, dim1, LLVMInt32Type(), "dimSize1");
+    Value dimSize2 = LLVMBuildTrunc(builder, dim2, LLVMInt32Type(), "dimSize2");
+
+    Value constDimSize1 = LLVMBuildIntCast2(builder, dimSize1, LLVMInt64Type(), false, "constDimSize1");
+    Value constDimSize2 = LLVMBuildIntCast2(builder, dimSize2, LLVMInt64Type(), false, "constDimSize2");
+
+    if (!LLVMIsConstant(constDimSize1) || !LLVMIsConstant(constDimSize2)) {
+        printf("Erro: as dimensões da matriz devem ser constantes.\n");
+        return NULL;
+    }
+
+    unsigned arraySize1 = LLVMConstIntGetZExtValue(constDimSize1);
+    unsigned arraySize2 = LLVMConstIntGetZExtValue(constDimSize2);
+
+    LLVMTypeRef rowType = LLVMArrayType(type, arraySize2);
+    LLVMTypeRef matrixType = LLVMArrayType(rowType, arraySize1);
+    return LLVMBuildAlloca(builder, matrixType, name);
 }
 
 Value lista_variaveis(Node* node, Type type){
-    primitive_type t;
+    primitive_type primitive;
     LLVMTypeKind kind = LLVMGetTypeKind(type);
     switch(kind){
         case LLVMFloatTypeKind:
-            t = T_FLUTUANTE;
+            primitive = T_FLUTUANTE;
             break;
         case LLVMIntegerTypeKind:
-            t = T_INTEIRO;
+            primitive = T_INTEIRO;
             break;
         default: printf("Tipo inesperado\n");
     }
+
     for(int i = 0; i < node->child_count; i++){
-        Value var = LLVMBuildAlloca(builder, type, node->ch[i]->label);
-        vt_insere_variavel_alocada(node->ch[i]->label, scope, var, t, false);
+        Value dim1, dim2;
+        dim1 = LLVMConstInt(LLVMInt32Type(), 0, 0);
+        var_dimension dim = get_dimension(node->ch[i], &dim1, &dim2);
+
+        Value var;
+        char* name = node->ch[i]->label;
+        switch(dim){
+            case SCALAR: var = aloca_escalar(name, type, primitive); break;
+            case VECTOR: var = aloca_vetor(name, type, primitive, dim1); break;
+            case MATRIX: var = aloca_matriz(name, type, primitive, dim1, dim2); break;
+            default: printf("Dimensão não implementada\n");
+        }
+
+        vt_insere_variavel_alocada(name, scope, var, dim1, dim2, dim, primitive, false);
     }
     return NULL;
-    // TODO tratar indice
 }
 
 Value declaracao_variaveis(Node* node){
@@ -382,7 +513,9 @@ void gerar_cabecalho(Node* node, Type returnType){
     for(int i = 0; i < funcParam->count; i++){
         Value param = LLVMGetParam(func, i);
         vt_insere_variavel_alocada(funcParam->params[i]->name, scope, 
-            param, funcParam->params[i]->type == LLVMInt32Type() ? T_INTEIRO : T_FLUTUANTE, true);
+            param, NULL, NULL, SCALAR, funcParam->params[i]->type 
+                == LLVMInt32Type() ? T_INTEIRO : T_FLUTUANTE, true
+        );
     }
 
     // Gera o corpo da função

@@ -49,18 +49,19 @@ define dso_local void @leiaFlutuante(ptr noundef %0) #0 {
   ret void
 }
 
-define i32 @main() {
+define void @main() {
 entry:
-  %a = alloca float, align 4
-  %b = alloca float, align 4
-  store float 1.500000e+00, ptr %a, align 4
-  call void @leiaFlutuante(ptr %b)
-  %a1 = load float, ptr %a, align 4
-  %multmp = fmul float %a1, 3.000000e+00
-  %b2 = load float, ptr %b, align 4
-  %addtmp = fadd float %multmp, %b2
-  call void @escrevaFlutuante(float %addtmp)
-  ret i32 0
+  %b = alloca [10 x [1 x float]], align 4
+  %c = alloca float, align 4
+  %ptr_element = getelementptr [10 x [1 x float]], ptr %b, i32 0, i32 2, i32 0
+  store float 1.000000e+00, ptr %ptr_element, align 4
+  %ptr_element1 = getelementptr [10 x [1 x float]], ptr %b, i32 0, i32 2, i32 0
+  %b2 = load float, ptr %ptr_element1, align 4
+  store float %b2, ptr %c, align 4
+  %ptr_element3 = getelementptr [10 x [1 x float]], ptr %b, i32 0, i32 2, i32 0
+  %b4 = load float, ptr %ptr_element3, align 4
+  call void @escrevaFlutuante(float %b4)
+  ret void
 }
 
 attributes #0 = { noinline nounwind optnone uwtable "frame-pointer"="all" "min-legal-vector-width"="0" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cmov,+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }

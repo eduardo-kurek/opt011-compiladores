@@ -406,12 +406,15 @@ void vt_verifica_inicializada_nao_utilizada(){
     vt->first = prev;
 }
 
-vt_entry* vt_insere_variavel_alocada(char* name, char* scope, Value ref, primitive_type type, bool isParam){
+vt_entry* vt_insere_variavel_alocada(char* name, char* scope, 
+    Value ref, Value dim1Val, Value dim2Val, var_dimension dim,
+    primitive_type type, bool isParam)
+{
     vt_entry* entry = (vt_entry*)malloc(sizeof(vt_entry));
     entry->name = name;
     entry->scope = scope;
     entry->type = type;
-    entry->dim = SCALAR;
+    entry->dim = dim;
     entry->dim_1_size = -1;
     entry->dim_2_size = -1;
     entry->initialized = true;
@@ -419,6 +422,8 @@ vt_entry* vt_insere_variavel_alocada(char* name, char* scope, Value ref, primiti
     entry->line = -1;
     entry->ref = ref;
     entry->isParam = isParam;
+    entry->dim1Val = dim1Val;
+    entry->dim2Val = dim2Val;
     
     entry->next = vt->first;
     vt->first = entry;
