@@ -160,7 +160,7 @@ Value atribuicao(Node* node){
         case VECTOR: return guarda_vetor(expr, var, PROCESSA_NODE_EXPECTED(node->ch[0]->ch[0]->ch[0], LLVMInt32Type()));
         case MATRIX: 
             Value row = PROCESSA_NODE_EXPECTED(node->ch[0]->ch[0]->ch[0]->ch[0], LLVMInt32Type());
-            Value col = PROCESSA_NODE_EXPECTED(node->ch[0]->ch[0]->ch[0]->ch[1], LLVMInt32Type());
+            Value col = PROCESSA_NODE_EXPECTED(node->ch[0]->ch[0]->ch[1], LLVMInt32Type());
             return guarda_matriz(expr, var, row, col);
         default: break;
     }
