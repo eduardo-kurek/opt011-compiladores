@@ -140,9 +140,8 @@ Value guarda_matriz(Value expression, Value var, Value rowIndex, Value colIndex)
 }
 
 Value guarda_vetor(Value expression, Value var, Value index){
-    Value idx = LLVMBuildTrunc(builder, index, LLVMInt32Type(), "index");
     Type arrayType = LLVMGetAllocatedType(var);
-    Value ptr = LLVMBuildGEP2(builder, arrayType, var, (Value[]){ LLVMConstInt(LLVMInt32Type(), 0, 0), idx }, 2, "ptr_element");
+    Value ptr = LLVMBuildGEP2(builder, arrayType, var, (Value[]){ LLVMConstInt(LLVMInt32Type(), 0, 0), index }, 2, "ptr_element");
     return LLVMBuildStore(builder, expression, ptr);
 }
 
@@ -158,10 +157,10 @@ Value atribuicao(Node* node){
 
     switch(entry->dim){
         case SCALAR: return guarda_escalar(expr, var);
-        case VECTOR: return guarda_vetor(expr, var, PROCESSA_NODE_EXPECTED(node->ch[0]->ch[0], LLVMInt32Type()));
+        case VECTOR: return guarda_vetor(expr, var, PROCESSA_NODE_EXPECTED(node->ch[0]->ch[0]->ch[0], LLVMInt32Type()));
         case MATRIX: 
             Value row = PROCESSA_NODE_EXPECTED(node->ch[0]->ch[0]->ch[0]->ch[0], LLVMInt32Type());
-            Value col = PROCESSA_NODE_EXPECTED(node->ch[0]->ch[0]->ch[1], LLVMInt32Type());
+            Value col = PROCESSA_NODE_EXPECTED(node->ch[0]->ch[0]->ch[0]->ch[1], LLVMInt32Type());
             return guarda_matriz(expr, var, row, col);
         default: break;
     }
@@ -414,6 +413,28 @@ Value escreva(Node* node, Type expectedType){
         return LLVMBuildCall2(builder, escrevaFlutuante.type, escrevaFlutuante.func, (Value[]){ value }, 1, "");
 }
 
+Value leia_matriz(Value var, Type callType, Value callFunc, Value rowIndex, Value colIndex){
+    Value rowIdx = LLVMBuildTrunc(builder, rowIndex, LLVMInt32Type(), "rowIndex");
+    Value colIdx = LLVMBuildTrunc(builder, colIndex, LLVMInt32Type(), "colIndex");
+    Type matrixType = LLVMGetAllocatedType(var);
+    Value ptr = LLVMBuildGEP2(
+        builder, matrixType, var, 
+        (Value[]){ LLVMConstInt(LLVMInt32Type(), 0, 0), rowIdx, colIdx }, 
+        3, "ptr_element"
+    );
+    return LLVMBuildCall2(builder, callType, callFunc, (Value[]){ ptr }, 1, "");
+}
+
+Value leia_vetor(Value var, Type callType, Value callFunc, Value index){
+    Type arrayType = LLVMGetAllocatedType(var);
+    Value ptr = LLVMBuildGEP2(builder, arrayType, var, (Value[]){ LLVMConstInt(LLVMInt32Type(), 0, 0), index }, 2, "ptr_element");
+    return LLVMBuildCall2(builder, callType, callFunc, (Value[]){ ptr }, 1, "");
+}
+
+Value leia_escalar(Value var, Type callType, Value callFunc){
+    return LLVMBuildCall2(builder, callType, callFunc, (Value[]){ var }, 1, "");
+}
+
 Value leia(Node* node, Type expectedType){
     vt_entry* entry = vt_obter_variavel_alocada(node->ch[0]->label);
     if(entry == NULL) {
@@ -422,10 +443,25 @@ Value leia(Node* node, Type expectedType){
     }
     Value value = entry->ref;
     Kind kind = entry->type == T_INTEIRO ? LLVMIntegerTypeKind : LLVMFloatTypeKind;
-    if(kind == LLVMIntegerTypeKind)
-        return LLVMBuildCall2(builder, leiaInteiro.type, leiaInteiro.func, (Value[]){ value }, 1, "");
-    else if(kind == LLVMFloatTypeKind)
-        return LLVMBuildCall2(builder, leiaFlutuante.type, leiaFlutuante.func, (Value[]){ value }, 1, "");
+    Type callType;
+    Value callFunc;
+    if(kind == LLVMIntegerTypeKind) callType = leiaInteiro.type, callFunc = leiaInteiro.func;
+    else callType = leiaFlutuante.type, callFunc = leiaFlutuante.func;
+
+    switch(entry->dim){
+        case SCALAR: return leia_escalar(value, callType, callFunc);
+        case VECTOR: return leia_vetor(value, callType, callFunc, PROCESSA_NODE_EXPECTED(node->ch[0]->ch[0], LLVMInt32Type()));
+        case MATRIX: 
+            Value row = PROCESSA_NODE_EXPECTED(node->ch[0]->ch[0]->ch[0]->ch[0], LLVMInt32Type());
+            Value col = PROCESSA_NODE_EXPECTED(node->ch[0]->ch[0]->ch[1], LLVMInt32Type());
+            return leia_matriz(value, callType, callFunc, row, col);
+        default: break;
+    }
+}
+
+Value indice(Node* node, Type expectedType){
+    printf("Indice não implementado\n");
+    return NULL;
 }
 
 Value processa_node(Node* node, Type expectedType){
@@ -448,6 +484,7 @@ Value processa_node(Node* node, Type expectedType){
         case NT_CHAMADA_FUNCAO: return chamada_funcao(node, expectedType);
         case NT_ESCREVA: return escreva(node, expectedType);
         case NT_LEIA: return leia(node, expectedType);
+        case NT_INDICE: return indice(node, expectedType);
         case NT_VAZIO: return NULL;
         
         default: printf("\033[0;35mProcessamento '%s' não implementado\033[0m\n", node_type_to_string(node));

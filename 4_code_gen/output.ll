@@ -49,19 +49,47 @@ define dso_local void @leiaFlutuante(ptr noundef %0) #0 {
   ret void
 }
 
-define void @main() {
+define i32 @main() {
 entry:
-  %b = alloca [10 x [1 x float]], align 4
-  %c = alloca float, align 4
-  %ptr_element = getelementptr [10 x [1 x float]], ptr %b, i32 0, i32 2, i32 0
-  store float 1.000000e+00, ptr %ptr_element, align 4
-  %ptr_element1 = getelementptr [10 x [1 x float]], ptr %b, i32 0, i32 2, i32 0
-  %b2 = load float, ptr %ptr_element1, align 4
-  store float %b2, ptr %c, align 4
-  %ptr_element3 = getelementptr [10 x [1 x float]], ptr %b, i32 0, i32 2, i32 0
-  %b4 = load float, ptr %ptr_element3, align 4
-  call void @escrevaFlutuante(float %b4)
-  ret void
+  %a = alloca [10 x i32], align 4
+  %i = alloca i32, align 4
+  store i32 0, ptr %i, align 4
+  br label %repita
+
+repita:                                           ; preds = %repita, %entry
+  %i1 = load i32, ptr %i, align 4
+  %multmp = mul i32 %i1, 3
+  %i2 = load i32, ptr %i, align 4
+  %ptr_element = getelementptr [10 x i32], ptr %a, i32 0, i32 %i2
+  store i32 %multmp, ptr %ptr_element, align 4
+  %i3 = load i32, ptr %i, align 4
+  %addtmp = add i32 %i3, 1
+  store i32 %addtmp, ptr %i, align 4
+  %i4 = load i32, ptr %i, align 4
+  %int2float = sitofp i32 %i4 to float
+  %cmptmp = fcmp olt float %int2float, 1.000000e+01
+  br i1 %cmptmp, label %repita, label %fim
+
+fim:                                              ; preds = %repita
+  store i32 0, ptr %i, align 4
+  br label %repita5
+
+repita5:                                          ; preds = %repita5, %fim
+  %i7 = load i32, ptr %i, align 4
+  %ptr_element8 = getelementptr [10 x i32], ptr %a, i32 0, i32 %i7
+  %a9 = load i32, ptr %ptr_element8, align 4
+  call void @escrevaInteiro(i32 %a9)
+  %i10 = load i32, ptr %i, align 4
+  %addtmp11 = add i32 %i10, 1
+  store i32 %addtmp11, ptr %i, align 4
+  %i12 = load i32, ptr %i, align 4
+  %int2float13 = sitofp i32 %i12 to float
+  %cmptmp14 = fcmp olt float %int2float13, 1.000000e+01
+  br i1 %cmptmp14, label %repita5, label %fim6
+
+fim6:                                             ; preds = %repita5
+  ret i32 0
+  ret i32 0
 }
 
 attributes #0 = { noinline nounwind optnone uwtable "frame-pointer"="all" "min-legal-vector-width"="0" "no-trapping-math"="true" "stack-protector-buffer-size"="8" "target-cpu"="x86-64" "target-features"="+cmov,+cx8,+fxsr,+mmx,+sse,+sse2,+x87" "tune-cpu"="generic" }
