@@ -3,6 +3,6 @@
 
 #include "tree.h"
 
-void gerar_codigo(Node* root);
+void gerar_codigo(Node* root, char* fileName);
 
 #endif

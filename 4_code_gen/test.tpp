@@ -27,18 +27,15 @@ inteiro principal()
 	retorna(0)
 fim }
 
-flutuante: g
-g := 2.53
-
-teste(flutuante: arg)
-	g := g + arg
-	escreva(g)
-fim
+flutuante: g[2]
 	
-inteiro principal() 
-	flutuante: g
-	g := 1.92
-	escreva(g)
-	teste(g)
+inteiro principal()
+	inteiro: h[1]
+	g[0] := 2
+	h[0] := 1
+	leia(g[1])
+	escreva(g[0])
+	escreva(h[0])
+	escreva(g[1])
 	retorna(0)
 fim

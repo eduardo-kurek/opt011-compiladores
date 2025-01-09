@@ -55,7 +55,7 @@ int main(int argc, char* argv[]) {
         //return 3;
     }
 
-    gerar_codigo(syntax_tree);
+    gerar_codigo(syntax_tree, argv[fileIdx]);
 
     return 0;
 }

@@ -8,7 +8,13 @@
 #include <llvm-c/Core.h>
 #include <llvm-c/BitWriter.h>
 #include <llvm-c/IRReader.h> // Para LLVMParseIRInContext
+#include <llvm-c/TargetMachine.h> // Para LLVMCreateTargetMachine
+#include <llvm-c/Target.h> // Para LLVMGetTargetFromTriple
+#include <llvm-c/Transforms/PassBuilder.h>
+#include <llvm-c/Support.h>
 #include <llvm-c/Linker.h>
+#include <unistd.h>
+#include <sys/wait.h>
 
 LLVMModuleRef module;
 LLVMContextRef context;
@@ -85,27 +91,35 @@ Value num(Node* node, Type expectedType){
     }
 }
 
-Value carrega_matriz(char* name, Type type, Value reference, Value rowIndex, Value colIndex){
+bool escopo_global(){
+    return strcmp(scope, "global") == 0;
+}
+
+Value carrega(char* name, Type type, Value reference){
+    return LLVMBuildLoad2(builder, type, reference, name);
+}
+
+Value carrega_matriz(char* scope, char* name, Type type, Value reference, Value rowIndex, Value colIndex){
     Value rowIdx = LLVMBuildTrunc(builder, rowIndex, LLVMInt32Type(), "rowIndex");
     Value colIdx = LLVMBuildTrunc(builder, colIndex, LLVMInt32Type(), "colIndex");
-    Type matrixType = LLVMGetAllocatedType(reference);
+    Type matrixType = strcmp(scope, "global") == 0 ? LLVMTypeOf(reference) : LLVMGetAllocatedType(reference);
     Value ptr = LLVMBuildGEP2(
         builder, matrixType, reference, 
         (Value[]){ LLVMConstInt(LLVMInt32Type(), 0, 0), rowIdx, colIdx }, 
         3, "ptr_element"
     );
-    return LLVMBuildLoad2(builder, type, ptr, name);
+    return carrega(name, type, ptr);
 }
 
-Value carrega_vetor(char* name, Type type, Value reference, Value index){
+Value carrega_vetor(char* scope, char* name, Type type, Value reference, Value index){
     Value idx = LLVMBuildTrunc(builder, index, LLVMInt32Type(), "index");
-    Type arrayType = LLVMGetAllocatedType(reference);
+    Type arrayType = strcmp(scope, "global") == 0 ? LLVMTypeOf(reference) : LLVMGetAllocatedType(reference);
     Value ptr = LLVMBuildGEP2(builder, arrayType, reference, (Value[]){ LLVMConstInt(LLVMInt32Type(), 0, 0), idx }, 2, "ptr_element");
-    return LLVMBuildLoad2(builder, type, ptr, name);
+    return carrega(name, type, ptr);
 }
 
 Value carrega_escalar(char* name, Type type, Value reference){
-    return LLVMBuildLoad2(builder, type, reference, name);
+    return carrega(name, type, reference);
 }
 
 Value var(Node* node, Type expectedType){
@@ -116,19 +130,15 @@ Value var(Node* node, Type expectedType){
     else{
         switch (entry->dim){
             case SCALAR: value = carrega_escalar(node->label, type, entry->ref); break;
-            case VECTOR: value = carrega_vetor(node->label, type, entry->ref, PROCESSA_NODE_EXPECTED(node->ch[0]->ch[0], LLVMInt32Type())); break;
+            case VECTOR: value = carrega_vetor(entry->scope, node->label, type, entry->ref, PROCESSA_NODE_EXPECTED(node->ch[0]->ch[0], LLVMInt32Type())); break;
             case MATRIX:
                 Value row = PROCESSA_NODE_EXPECTED(node->ch[0]->ch[0]->ch[0], LLVMInt32Type());
                 Value col = PROCESSA_NODE_EXPECTED(node->ch[0]->ch[1], LLVMInt32Type());
-                value = carrega_matriz(node->label, type, entry->ref, row, col);
+                value = carrega_matriz(entry->scope, node->label, type, entry->ref, row, col);
             default: break;
         }
     }
     return converte(value, expectedType);
-}
-
-bool escopo_global(){
-    return strcmp(scope, "global") == 0;
 }
 
 Value guarda(Value expression, Value var){
@@ -140,10 +150,10 @@ Value guarda(Value expression, Value var){
     return LLVMBuildStore(builder, expression, var);
 }
 
-Value guarda_matriz(Value expression, Value var, Value rowIndex, Value colIndex){
+Value guarda_matriz(char* scope, Value expression, Value var, Value rowIndex, Value colIndex){
     Value rowIdx = LLVMBuildTrunc(builder, rowIndex, LLVMInt32Type(), "rowIndex");
     Value colIdx = LLVMBuildTrunc(builder, colIndex, LLVMInt32Type(), "colIndex");
-    Type matrixType = LLVMGetAllocatedType(var);
+    Type matrixType = strcmp(scope, "global") == 0 ? LLVMTypeOf(var) : LLVMGetAllocatedType(var);
     Value ptr = LLVMBuildGEP2(
         builder, matrixType, var, 
         (Value[]){ LLVMConstInt(LLVMInt32Type(), 0, 0), rowIdx, colIdx }, 
@@ -152,8 +162,8 @@ Value guarda_matriz(Value expression, Value var, Value rowIndex, Value colIndex)
     return guarda(expression, ptr);
 }
 
-Value guarda_vetor(Value expression, Value var, Value index){
-    Type arrayType = LLVMGetAllocatedType(var);
+Value guarda_vetor(char* scope, Value expression, Value var, Value index){
+    Type arrayType = strcmp(scope, "global") == 0 ? LLVMTypeOf(var) : LLVMGetAllocatedType(var);
     Value ptr = LLVMBuildGEP2(builder, arrayType, var, (Value[]){ LLVMConstInt(LLVMInt32Type(), 0, 0), index }, 2, "ptr_element");
     return guarda(expression, ptr);
 }
@@ -170,11 +180,11 @@ Value atribuicao(Node* node){
 
     switch(entry->dim){
         case SCALAR: return guarda_escalar(expr, var);
-        case VECTOR: return guarda_vetor(expr, var, PROCESSA_NODE_EXPECTED(node->ch[0]->ch[0]->ch[0], LLVMInt32Type()));
+        case VECTOR: return guarda_vetor(entry->scope, expr, var, PROCESSA_NODE_EXPECTED(node->ch[0]->ch[0]->ch[0], LLVMInt32Type()));
         case MATRIX: 
             Value row = PROCESSA_NODE_EXPECTED(node->ch[0]->ch[0]->ch[0]->ch[0], LLVMInt32Type());
             Value col = PROCESSA_NODE_EXPECTED(node->ch[0]->ch[0]->ch[1], LLVMInt32Type());
-            return guarda_matriz(expr, var, row, col);
+            return guarda_matriz(entry->scope, expr, var, row, col);
         default: break;
     }
 }
@@ -205,6 +215,12 @@ Value aloca(char* name, Type type){
             LLVMSetInitializer(globalVar, LLVMConstInt(type, 0, 0));
         else if(kind == LLVMFloatTypeKind)
             LLVMSetInitializer(globalVar, LLVMConstReal(type, 0.0));
+        else if(kind == LLVMArrayTypeKind) {
+            LLVMSetInitializer(globalVar, LLVMConstNull(type));
+            return globalVar;
+        }
+        else
+            printf("Tipo inesperado %d\n", kind);
         return globalVar;
     }
     else return LLVMBuildAlloca(builder, type, name);
@@ -245,7 +261,6 @@ Value aloca_matriz(char* name, Type type, Value dim1, Value dim2) {
     LLVMTypeRef matrixType = LLVMArrayType(rowType, arraySize1);
     return aloca(name, matrixType);
 }
-
 
 Value lista_variaveis(Node* node, Type type){
     primitive_type primitive;
@@ -486,11 +501,6 @@ Value leia(Node* node, Type expectedType){
     }
 }
 
-Value indice(Node* node, Type expectedType){
-    printf("Indice não implementado\n");
-    return NULL;
-}
-
 Value processa_node(Node* node, Type expectedType){
     switch (node->type){
         case NT_RETORNA: return gerar_retorna(node, expectedType);
@@ -511,7 +521,6 @@ Value processa_node(Node* node, Type expectedType){
         case NT_CHAMADA_FUNCAO: return chamada_funcao(node, expectedType);
         case NT_ESCREVA: return escreva(node, expectedType);
         case NT_LEIA: return leia(node, expectedType);
-        case NT_INDICE: return indice(node, expectedType);
         case NT_VAZIO: return NULL;
         
         default: printf("\033[0;35mProcessamento '%s' não implementado\033[0m\n", node_type_to_string(node));
@@ -636,13 +645,104 @@ void gerar_declaracao(Node* node){
     }
 }
 
-void linkar_biblioteca_std(LLVMModuleRef module){
-    LLVMMemoryBufferRef buffer;
-    LLVMModuleRef stdModule;
+void add_std_code(LLVMModuleRef module) {
+    // Criação das constantes de string
+    LLVMTypeRef arrayType = LLVMArrayType(LLVMInt8Type(), 4);
+    LLVMValueRef str1 = LLVMAddGlobal(module, arrayType, "@.str");
+    LLVMSetInitializer(str1, LLVMConstString("%d\n\00", 4, 1));  // Inclui o \n para str1
+    LLVMSetLinkage(str1, LLVMPrivateLinkage);
 
-    LLVMCreateMemoryBufferWithContentsOfFile("src/std.ll", &buffer, NULL);
-    LLVMParseIRInContext(context, buffer, &stdModule, NULL);
-    LLVMLinkModules2(module, stdModule);
+    LLVMValueRef str2 = LLVMAddGlobal(module, arrayType, "@.str.1");
+    LLVMSetInitializer(str2, LLVMConstString("%f\n\00", 4, 1));  // Inclui o \n para str2
+    LLVMSetLinkage(str2, LLVMPrivateLinkage);
+
+    // str3 sem \n, apenas "%d\0"
+    LLVMValueRef str3 = LLVMAddGlobal(module, LLVMArrayType(LLVMInt8Type(), 3), "@.str.2");
+    LLVMSetInitializer(str3, LLVMConstString("%d\00", 3, 1));  // Sem o \n para str3
+    LLVMSetLinkage(str3, LLVMPrivateLinkage);
+
+    // str4 sem \n, apenas "%f\0"
+    LLVMValueRef str4 = LLVMAddGlobal(module, LLVMArrayType(LLVMInt8Type(), 3), "@.str.3");
+    LLVMSetInitializer(str4, LLVMConstString("%f\00", 3, 1));  // Sem o \n para str4
+    LLVMSetLinkage(str4, LLVMPrivateLinkage);
+
+    // Declaração da função printf
+    LLVMTypeRef printfType = LLVMFunctionType(LLVMInt32Type(), (LLVMTypeRef[]){LLVMPointerType(LLVMInt8Type(), 0), LLVMInt32Type()}, 2, 0);
+    LLVMAddFunction(module, "printf", printfType);
+    
+    // Declaração da função __isoc99_scanf
+    LLVMTypeRef scanfType = LLVMFunctionType(LLVMInt32Type(), (LLVMTypeRef[]){LLVMPointerType(LLVMInt8Type(), 0), LLVMPointerType(LLVMInt8Type(), 0)}, 2, 0);
+    LLVMAddFunction(module, "__isoc99_scanf", scanfType);
+
+    // Função @escrevaInteiro
+    LLVMTypeRef escrevaInteiroType = LLVMFunctionType(LLVMVoidType(), (LLVMTypeRef[]){LLVMInt32Type()}, 1, 0);
+    LLVMValueRef escrevaInteiro = LLVMAddFunction(module, "escrevaInteiro", escrevaInteiroType);
+    LLVMSetFunctionCallConv(escrevaInteiro, LLVMCCallConv);
+
+    LLVMBuilderRef builder = LLVMCreateBuilder();
+    LLVMBasicBlockRef entry = LLVMAppendBasicBlock(escrevaInteiro, "entry");
+    LLVMPositionBuilderAtEnd(builder, entry);
+
+    LLVMValueRef param = LLVMGetParam(escrevaInteiro, 0);
+    LLVMValueRef allocaInst = LLVMBuildAlloca(builder, LLVMInt32Type(), "alloca");
+    LLVMBuildStore(builder, param, allocaInst);
+
+    LLVMValueRef loadInst = LLVMBuildLoad2(builder, LLVMInt32Type(), allocaInst, "load");
+    LLVMValueRef callInst = LLVMBuildCall2(builder, printfType, LLVMGetNamedFunction(module, "printf"), (LLVMValueRef[]){str1, loadInst}, 2, "printf");
+    LLVMBuildRetVoid(builder);
+
+    // Função @escrevaFlutuante
+    LLVMTypeRef escrevaFlutuanteType = LLVMFunctionType(LLVMVoidType(), (LLVMTypeRef[]){LLVMFloatType()}, 1, 0);
+    LLVMValueRef escrevaFlutuante = LLVMAddFunction(module, "escrevaFlutuante", escrevaFlutuanteType);
+    LLVMSetFunctionCallConv(escrevaFlutuante, LLVMCCallConv);
+
+    entry = LLVMAppendBasicBlock(escrevaFlutuante, "entry");
+    LLVMPositionBuilderAtEnd(builder, entry);
+
+    param = LLVMGetParam(escrevaFlutuante, 0);
+    allocaInst = LLVMBuildAlloca(builder, LLVMFloatType(), "alloca");
+    LLVMBuildStore(builder, param, allocaInst);
+
+    loadInst = LLVMBuildLoad2(builder, LLVMFloatType(), allocaInst, "load");
+    LLVMValueRef fpextInst = LLVMBuildFPExt(builder, loadInst, LLVMDoubleType(), "fpext");
+    callInst = LLVMBuildCall2(builder, LLVMFunctionType(LLVMInt32Type(), (LLVMTypeRef[]){LLVMPointerType(LLVMInt8Type(), 0), LLVMDoubleType()}, 2, 0), LLVMGetNamedFunction(module, "printf"), (LLVMValueRef[]){str2, fpextInst}, 2, "printf");
+    LLVMBuildRetVoid(builder);
+
+    // Função @leiaInteiro
+    LLVMTypeRef leiaInteiroType = LLVMFunctionType(LLVMVoidType(), (LLVMTypeRef[]){LLVMPointerType(LLVMInt32Type(), 0)}, 1, 0);
+    LLVMValueRef leiaInteiro = LLVMAddFunction(module, "leiaInteiro", leiaInteiroType);
+    LLVMSetFunctionCallConv(leiaInteiro, LLVMCCallConv);
+
+    entry = LLVMAppendBasicBlock(leiaInteiro, "entry");
+    LLVMPositionBuilderAtEnd(builder, entry);
+
+    param = LLVMGetParam(leiaInteiro, 0);
+    allocaInst = LLVMBuildAlloca(builder, LLVMPointerType(LLVMInt32Type(), 0), "alloca");
+    LLVMBuildStore(builder, param, allocaInst);
+
+    loadInst = LLVMBuildLoad2(builder, LLVMPointerType(LLVMInt32Type(), 0), allocaInst, "load");
+    callInst = LLVMBuildCall2(builder, scanfType, LLVMGetNamedFunction(module, "__isoc99_scanf"), (LLVMValueRef[]){str3, loadInst}, 2, "__isoc99_scanf");
+    LLVMBuildRetVoid(builder);
+
+    // Função @leiaFlutuante
+    LLVMTypeRef leiaFlutuanteType = LLVMFunctionType(LLVMVoidType(), (LLVMTypeRef[]){LLVMPointerType(LLVMFloatType(), 0)}, 1, 0);
+    LLVMValueRef leiaFlutuante = LLVMAddFunction(module, "leiaFlutuante", leiaFlutuanteType);
+    LLVMSetFunctionCallConv(leiaFlutuante, LLVMCCallConv);
+
+    entry = LLVMAppendBasicBlock(leiaFlutuante, "entry");
+    LLVMPositionBuilderAtEnd(builder, entry);
+
+    param = LLVMGetParam(leiaFlutuante, 0);
+    allocaInst = LLVMBuildAlloca(builder, LLVMPointerType(LLVMFloatType(), 0), "alloca");
+    LLVMBuildStore(builder, param, allocaInst);
+
+    loadInst = LLVMBuildLoad2(builder, LLVMPointerType(LLVMFloatType(), 0), allocaInst, "load");
+    callInst = LLVMBuildCall2(builder, scanfType, LLVMGetNamedFunction(module, "__isoc99_scanf"), (LLVMValueRef[]){str4, loadInst}, 2, "__isoc99_scanf");
+    LLVMBuildRetVoid(builder);
+}
+
+void linkar_biblioteca_std(LLVMModuleRef module){
+    add_std_code(module);
 
     escrevaInteiro.func = LLVMGetNamedFunction(module, "escrevaInteiro");
     escrevaInteiro.type = LLVMFunctionType(LLVMVoidType(), (Type[]){ LLVMInt32Type() }, 1, false);
@@ -657,19 +757,77 @@ void linkar_biblioteca_std(LLVMModuleRef module){
     leiaFlutuante.type = LLVMFunctionType(LLVMVoidType(), (Type[]){ LLVMPointerType(LLVMFloatType(), 0) }, 1, false);
 }
 
-void gerar_codigo(Node* root){
+void gerar_codigo_executavel(char* fileName){
+    printf("Chegando aqui\n");
+    if(fork() == 0){
+        // Processo filho
+        char* outputName = (char*)malloc(strlen(fileName) + 5);
+        strcpy(outputName, fileName);
+        outputName[strlen(outputName)-4] = '\0';
+        char* programa = "gcc";
+        char* args[] = {"gcc", "-o", outputName, "/tmp/tmp_tpc_obj.o", NULL};
+        if(execvp(programa, args) == -1){
+            perror("Erro ao executar o gcc");
+            free(outputName);
+            exit(5);
+        }
+        free(outputName);
+        exit(0);
+    }
+    else{
+        // Processo pai
+        int status;
+        wait(&status);
+        if(status != 0){
+            fprintf(stderr, "Erro ao gerar o código executável, verifique se você possui o programa 'gcc' disponível\n");
+            exit(5);
+        }
+        printf("Código executável gerado com sucesso\n");
+    }
+}
+
+void gerar_codigo_objeto(char* llFileName){
+    if(fork() == 0){
+        // Processo filho
+        char* programa = "llc";
+        char* args[] = {"llc", "--relocation-model=pic","-filetype=obj", "-o", "/tmp/tmp_tpc_obj.o", llFileName, NULL};
+        if (execvp(programa, args) == -1) {
+            perror("Erro ao executar o llc");
+            exit(1);
+        }
+        exit(0);
+    }
+    else{
+        // Processo pai
+        int status;
+        wait(&status);
+        if(status != 0){
+            fprintf(stderr, "Erro ao gerar o código objeto, verifique se você possui o programa 'llc' disponível\n");
+            exit(5);
+        }
+    }
+}
+
+void gerar_codigo(Node* root, char* fileName){
     vt_init();
     ft_init();
     printf("Gerando código...\n");
 
     context = LLVMGetGlobalContext();
     module = LLVMModuleCreateWithName("program.bc");
+    char* triple = LLVMGetDefaultTargetTriple();
+    LLVMSetTarget(module, triple);
     builder = LLVMCreateBuilder();
 
     linkar_biblioteca_std(module);
     gerar_declaracao(root->ch[0]);
 
-    if(LLVMPrintModuleToFile(module, "output.ll", NULL) != 0){
+    char* outputName = (char*)malloc(strlen(fileName) + 5);
+    strcpy(outputName, fileName);
+    int len = strlen(outputName);
+    outputName[len-4] = '\0';
+    strcat(outputName, ".ll");
+    if(LLVMPrintModuleToFile(module, outputName, NULL) != 0){
         fprintf(stderr, "Erro ao salvar o arquivo .ll.\n");
     }
 
@@ -677,4 +835,8 @@ void gerar_codigo(Node* root){
     LLVMDisposeModule(module);
     vt_destroy();
     ft_destroy();
+
+    gerar_codigo_objeto(outputName);
+    gerar_codigo_executavel(fileName);
+    free(outputName);
 }
