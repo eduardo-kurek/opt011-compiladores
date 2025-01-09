@@ -455,10 +455,10 @@ Value escreva(Node* node, Type expectedType){
         return LLVMBuildCall2(builder, escrevaFlutuante.type, escrevaFlutuante.func, (Value[]){ value }, 1, "");
 }
 
-Value leia_matriz(Value var, Type callType, Value callFunc, Value rowIndex, Value colIndex){
+Value leia_matriz(char* scope, Value var, Type callType, Value callFunc, Value rowIndex, Value colIndex){
     Value rowIdx = LLVMBuildTrunc(builder, rowIndex, LLVMInt32Type(), "rowIndex");
     Value colIdx = LLVMBuildTrunc(builder, colIndex, LLVMInt32Type(), "colIndex");
-    Type matrixType = LLVMGetAllocatedType(var);
+    Type matrixType = strcmp(scope, "global") == 0 ? LLVMTypeOf(var) : LLVMGetAllocatedType(var);
     Value ptr = LLVMBuildGEP2(
         builder, matrixType, var, 
         (Value[]){ LLVMConstInt(LLVMInt32Type(), 0, 0), rowIdx, colIdx }, 
@@ -467,8 +467,13 @@ Value leia_matriz(Value var, Type callType, Value callFunc, Value rowIndex, Valu
     return LLVMBuildCall2(builder, callType, callFunc, (Value[]){ ptr }, 1, "");
 }
 
-Value leia_vetor(Value var, Type callType, Value callFunc, Value index){
-    Type arrayType = LLVMGetAllocatedType(var);
+Value leia_vetor(char* scope, Value var, Type callType, Value callFunc, Value index){
+    Type arrayType = strcmp(scope, "global") == 0 ? LLVMTypeOf(var) : LLVMGetAllocatedType(var);
+    if (strcmp(scope, "global") == 0) {
+        Value ptr = LLVMGetNamedGlobal(module, LLVMGetValueName(var));
+        return LLVMBuildCall2(builder, callType, callFunc, (Value[]){ ptr }, 1, "");
+    }
+
     Value ptr = LLVMBuildGEP2(builder, arrayType, var, (Value[]){ LLVMConstInt(LLVMInt32Type(), 0, 0), index }, 2, "ptr_element");
     return LLVMBuildCall2(builder, callType, callFunc, (Value[]){ ptr }, 1, "");
 }
@@ -492,11 +497,11 @@ Value leia(Node* node, Type expectedType){
 
     switch(entry->dim){
         case SCALAR: return leia_escalar(value, callType, callFunc);
-        case VECTOR: return leia_vetor(value, callType, callFunc, PROCESSA_NODE_EXPECTED(node->ch[0]->ch[0], LLVMInt32Type()));
+        case VECTOR: return leia_vetor(entry->scope, value, callType, callFunc, PROCESSA_NODE_EXPECTED(node->ch[0]->ch[0]->ch[0], LLVMInt32Type()));
         case MATRIX: 
             Value row = PROCESSA_NODE_EXPECTED(node->ch[0]->ch[0]->ch[0]->ch[0], LLVMInt32Type());
             Value col = PROCESSA_NODE_EXPECTED(node->ch[0]->ch[0]->ch[1], LLVMInt32Type());
-            return leia_matriz(value, callType, callFunc, row, col);
+            return leia_matriz(entry->scope, value, callType, callFunc, row, col);
         default: break;
     }
 }
@@ -758,7 +763,6 @@ void linkar_biblioteca_std(LLVMModuleRef module){
 }
 
 void gerar_codigo_executavel(char* fileName){
-    printf("Chegando aqui\n");
     if(fork() == 0){
         // Processo filho
         char* outputName = (char*)malloc(strlen(fileName) + 5);
@@ -782,7 +786,6 @@ void gerar_codigo_executavel(char* fileName){
             fprintf(stderr, "Erro ao gerar o código executável, verifique se você possui o programa 'gcc' disponível\n");
             exit(5);
         }
-        printf("Código executável gerado com sucesso\n");
     }
 }
 
@@ -811,7 +814,6 @@ void gerar_codigo_objeto(char* llFileName){
 void gerar_codigo(Node* root, char* fileName){
     vt_init();
     ft_init();
-    printf("Gerando código...\n");
 
     context = LLVMGetGlobalContext();
     module = LLVMModuleCreateWithName("program.bc");

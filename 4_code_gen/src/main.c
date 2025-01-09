@@ -51,8 +51,7 @@ int main(int argc, char* argv[]) {
     node_to_dot(syntax_tree, "tree.dot");
 
     if(semantic_error){
-        //printf("Erro semantico encontrado\n");
-        //return 3;
+        return 3;
     }
 
     gerar_codigo(syntax_tree, argv[fileIdx]);

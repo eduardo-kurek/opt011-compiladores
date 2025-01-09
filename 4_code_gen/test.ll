@@ -6,7 +6,6 @@ target triple = "x86_64-pc-linux-gnu"
 @"@.str.1" = private global [4 x i8] c"%f\0A\00"
 @"@.str.2" = private global [3 x i8] c"%d\00"
 @"@.str.3" = private global [3 x i8] c"%f\00"
-@g = global [2 x float] zeroinitializer
 
 declare i32 @printf(ptr, i32)
 
@@ -51,19 +50,23 @@ entry:
 
 define i32 @main() {
 entry:
+  %g = alloca [2 x float], align 4
   %h = alloca [1 x i32], align 4
-  %i = alloca float, align 4
-  store float 2.000000e+00, ptr @g, align 4
-  %ptr_element = getelementptr [1 x i32], ptr %h, i32 0, i32 0
-  store i32 1, ptr %ptr_element, align 4
-  call void @leiaFlutuante(ptr %i)
-  %g = load float, ptr @g, align 4
-  call void @escrevaFlutuante(float %g)
+  %ptr_element = getelementptr [2 x float], ptr %g, i32 0, i32 0
+  store float 2.000000e+00, ptr %ptr_element, align 4
   %ptr_element1 = getelementptr [1 x i32], ptr %h, i32 0, i32 0
-  %h2 = load i32, ptr %ptr_element1, align 4
-  call void @escrevaInteiro(i32 %h2)
-  %i3 = load float, ptr %i, align 4
-  call void @escrevaFlutuante(float %i3)
+  store i32 1, ptr %ptr_element1, align 4
+  %ptr_element2 = getelementptr [2 x float], ptr %g, i32 0, i32 1
+  call void @leiaFlutuante(ptr %ptr_element2)
+  %ptr_element3 = getelementptr [2 x float], ptr %g, i32 0, i32 0
+  %g4 = load float, ptr %ptr_element3, align 4
+  call void @escrevaFlutuante(float %g4)
+  %ptr_element5 = getelementptr [1 x i32], ptr %h, i32 0, i32 0
+  %h6 = load i32, ptr %ptr_element5, align 4
+  call void @escrevaInteiro(i32 %h6)
+  %ptr_element7 = getelementptr [2 x float], ptr %g, i32 0, i32 1
+  %g8 = load float, ptr %ptr_element7, align 4
+  call void @escrevaFlutuante(float %g8)
   ret i32 0
   ret i32 0
 }

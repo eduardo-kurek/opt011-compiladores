@@ -27,9 +27,10 @@ inteiro principal()
 	retorna(0)
 fim }
 
-flutuante: g[2]
+
 	
 inteiro principal()
+	flutuante: g[2]
 	inteiro: h[1]
 	g[0] := 2
 	h[0] := 1
