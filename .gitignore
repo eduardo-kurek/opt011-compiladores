@@ -21,4 +21,13 @@
 3_semantica/tree.dot
 3_semantica/tree.png
 3_semantica/teste.tpp
+3_semantica/src/lex.yy.c
+4_code_gen/src/parser.tab.c
+4_code_gen/src/parser.tab.h
+4_code_gen/gen
+4_code_gen/.pytest_cache
+4_code_gen/__pycache__
+4_code_gen/tree.dot
+4_code_gen/tree.png
+4_code_gen/teste.tpp
 .vscode
