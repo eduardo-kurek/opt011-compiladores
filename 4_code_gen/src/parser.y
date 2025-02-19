@@ -671,7 +671,6 @@ yyreport_syntax_error (const yypcontext_t *ctx){
 
 
 void my_yyerror(const Error* err){
-    return;
     if(check_key)
         printf("%s\n", err->cod);
     else{

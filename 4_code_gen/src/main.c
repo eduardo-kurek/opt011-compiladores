@@ -40,10 +40,6 @@ int main(int argc, char* argv[]) {
         my_yyerror(&WAR_SYN_NOT_GEN_SYNTAX_TREE);
         return 1;
     }
-
-    // my_yyerror(&WAR_SYN_GEN_SYNTAX_TREE);
-    // my_yyerror(&WAR_SYN_ANA_SUCCESS);
-    // my_yyerror(&WAR_SYN_OUTPUT_FILE);
     
     if(!success) return 2;
 
