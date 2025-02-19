@@ -5,4 +5,8 @@
 
 * Não é possivel inicializar um array ou matriz globalmente.
 
+# Dependências
+
 * Para gerar o código objeto do arquivo LL, estou utilizando o programa `llc`, ele gera o código objeto no caminho: `/tmp/tmp_tpc_obj.o`. Verifique se você possui o `llc` com o comando `which llc`, se não, pode ser instalado com `sudo apt install llvm`;
+
+* Para gerar o executável do código objeto, estou usando o `gcc`, ele espera que o arquivo do código objeto está no caminho `/tmp/tmp_tpc_obj.o`. Verifique se você possui o `gcc` com o comando `which gcc`, se não, pode ser instalado com `sudo apt install gcc`;
