@@ -70,6 +70,7 @@ void analisa_indice(Node* indice, char* scope, vt_entry* entry, int dim){
     }
 
     if(expression_type == T_FLUTUANTE){
+        semantic_error = true;
         if(check_key) printf("%s\n", ERR_SEM_ARRAY_INDEX_NOT_INT.cod);
         else
             printf("\033[1;31mLinha %d: %s\033[0m\n", indice->ch[0]->line, ERR_SEM_ARRAY_INDEX_NOT_INT.msg);
@@ -77,6 +78,7 @@ void analisa_indice(Node* indice, char* scope, vt_entry* entry, int dim){
     else{
         int dimSize = dim == 1 ? entry->dim_1_size : entry->dim_2_size;
         if(int_value < 0 || int_value >= dimSize){
+            semantic_error = true;
             if(check_key) printf("%s\n", ERR_SEM_INDEX_OUT_OF_RANGE.cod);
             else
                 printf("\033[1;31mLinha %d: %s\033[0m\n", indice->ch[0]->line, ERR_SEM_INDEX_OUT_OF_RANGE.msg);
@@ -300,6 +302,7 @@ void analisa_retorna(Node* retorna, char* scope){
     func_has_return = true;
     analisa_expressao(retorna->ch[2], scope);
     if(expression_type != expected_return_type){
+        semantic_error = true;
         if(check_key) printf("%s\n", ERR_SEM_FUNC_RET_TYPE_ERROR.cod);
         else printf("\033[1;31mLinha %d: %s\033[0m\n", retorna->ch[0]->line, ERR_SEM_FUNC_RET_TYPE_ERROR.msg);
     }
@@ -404,6 +407,7 @@ void analisa_declaracao_funcao(Node* func){
         analisa_corpo(func->ch[1]->ch[4], entry->name);
 
     if(expected_return_type != T_VAZIO && !func_has_return){
+        semantic_error = true;
         if(check_key) printf("%s\n", ERR_SEM_FUNC_RET_TYPE_ERROR.cod);
         else printf("\033[1;31mLinha %d: %s %s\033[0m\n", func->ch[0]->line, ERR_SEM_FUNC_RET_TYPE_ERROR.msg, entry->name);
     }
