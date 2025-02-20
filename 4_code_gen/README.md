@@ -7,7 +7,16 @@
 
 * Não é possível alterar valor de parâmetros de funções diretamente, primeiro é preciso carrega-los para uma variavel local.
 
-# Dependências
+# Compilação
+Para compilar o compilador, basta usar o comando `make`. Ferramentas necessárias para compilação:
+
+* gcc;
+* Makefile;
+* flex;
+* bison;
+* llvm;
+
+# Dependências de execução
 
 * Para gerar o código objeto do arquivo LL, estou utilizando o programa `llc`, ele gera o código objeto no caminho: `/tmp/tmp_tpc_obj.o`. Verifique se você possui o `llc` com o comando `which llc`, se não, pode ser instalado com `sudo apt install llvm`;
 

@@ -24,10 +24,11 @@
 3_semantica/src/lex.yy.c
 4_code_gen/src/parser.tab.c
 4_code_gen/src/parser.tab.h
+4_code_gen/src/lex.yy.c
 4_code_gen/gen
-4_code_gen/.pytest_cache
-4_code_gen/__pycache__
 4_code_gen/tree.dot
 4_code_gen/tree.png
-4_code_gen/teste.tpp
+4_code_gen/test
+4_code_gen/test.ll
+
 .vscode
