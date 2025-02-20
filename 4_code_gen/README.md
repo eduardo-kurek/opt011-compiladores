@@ -3,7 +3,9 @@
 
 * Considerei que o caminho das bibliotecas llvm estão na pasta `/usr/lib/llvm-${VERSION}`, se a sua estiver em uma pasta diferente, pode alterar também no arquivo `src/Makefile`;
 
-* Não é possivel inicializar um array ou matriz globalmente.
+* Não é possiíel inicializar um array ou matriz globalmente.
+
+* Não é possível alterar valor de parâmetros de funções diretamente, primeiro é preciso carrega-los para uma variavel local.
 
 # Dependências
 
