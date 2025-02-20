@@ -30,5 +30,6 @@
 4_code_gen/tree.png
 4_code_gen/test
 4_code_gen/test.ll
+4_code_gen/src/*.o
 
 .vscode
